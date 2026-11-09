@@ -335,6 +335,19 @@
   .buy-final-label.lvl-1{color:var(--success);}
   .buy-final-desc{font-size:12.5px;color:var(--ink-muted);line-height:1.5;}
 
+  .toolbar-actions{display:flex;gap:8px;flex-wrap:wrap;}
+
+  .login-wrap{min-height:70vh;display:flex;align-items:center;justify-content:center;}
+  .login-card{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 26px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px;}
+  .login-title{font-size:28px;text-align:center;}
+  .login-sub{font-size:12.5px;color:var(--ink-muted);text-align:center;margin:0;line-height:1.6;}
+  .login-field{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ink-muted);}
+  .login-field input{border:1px solid var(--border);background:var(--bg);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--ink);}
+  .login-msg{min-height:18px;font-size:12px;color:var(--danger);text-align:center;}
+  .login-btn{border:none;background:var(--accent);color:var(--accent-ink);border-radius:9px;padding:12px;font-size:14px;font-weight:600;}
+  .login-btn:disabled{opacity:0.6;cursor:default;}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:min(92vw,520px);background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:10px;font-size:12.5px;line-height:1.5;box-shadow:var(--shadow);z-index:50;}
+
   footer.note{margin-top:26px;font-size:11.5px;color:var(--ink-faint);text-align:center;}
 </style>
 
@@ -343,7 +356,11 @@
 <script>
 (function(){
   "use strict";
-  var STORAGE_KEY = "routine-planner-state-v1";
+  var STORAGE_BASE = "routine-planner-state-v1";
+  var STORAGE_KEY = STORAGE_BASE;
+  // Supabase 연결 정보 (공개용 키). 비워두면 로그인 없이 이 브라우저에만 저장돼요.
+  var SB_URL = "https://wjrzfixautexgykikcry.supabase.co";
+  var SB_KEY = "sb_publishable_Vk6pRKe1ra7-sYmyrviSyg_fCicE81b";
 
   var DEFAULT_CATEGORIES = [
     {id:"cat-personal", name:"개인일정", color:"var(--cat-1)"},
@@ -471,65 +488,291 @@
     }catch(e){ return defaultState(); }
   }
 
-  var state = loadState();
-  var cloudDoc = null;
-  var cloudStatus = "local"; // local | connecting | synced | unavailable
+  var state = defaultState();
+
+  /* ---------------- 로그인 · 클라우드 동기화 (Supabase) ---------------- */
+  // SB_URL / SB_KEY 가 비어 있으면 로그인 없이 이 브라우저에만 저장됩니다.
+  // 공개용(anon/publishable) 키만 넣으세요. 데이터는 DB의 행 단위 보안(RLS)으로 본인만 읽고 쓸 수 있어요.
+  var SESSION_KEY = "mover-sb-session";
+  var session = null;
+  var cloudReady = false, cloudVersion = null, lastPushedJson = "";
+  var pushTimer = null, pushing = false, pushAgain = false, pollStarted = false;
+  var cloudStatus = "local"; // local | saving | synced | offline
+  var UI_FIELDS = ["view","year","month","selectedDate","settingsOpen"];
+
+  function sbConfigured(){ return !!(SB_URL && SB_KEY); }
 
   function save(){
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
-    if(cloudDoc){
-      cloudDoc.set(state).catch(function(){ /* next save() retries */ });
-    }
+    if(cloudReady) schedulePush();
+  }
+
+  function dataPart(){
+    return {categories:state.categories, templates:state.templates, timeCategories:state.timeCategories, buyChecklists:state.buyChecklists, days:state.days};
   }
 
   function setCloudStatus(s){
     cloudStatus = s;
-    var el = app && app.querySelector(".cloud-status");
+    var el = document.querySelector(".cloud-status");
     if(el) el.outerHTML = renderCloudStatus();
   }
 
   function renderCloudStatus(){
     var label = {
-      local: "이 브라우저에만 저장됨 (localStorage)",
-      connecting: "클라우드 동기화 연결 중...",
-      synced: "☁ Claude 계정으로 동기화됨 — 로그인하면 어느 기기에서나 이어서 볼 수 있어요",
-      unavailable: "이 브라우저에만 저장됨 (클라우드 동기화 사용 불가)"
+      local: "이 브라우저에만 저장됨",
+      saving: "☁ 저장 중...",
+      synced: "☁ " + (session ? session.user.email : "") + " 계정에 동기화됨 — 로그인하면 어느 기기에서나 이어서 볼 수 있어요",
+      offline: "⚠ 오프라인이에요 — 연결되면 자동으로 다시 동기화돼요"
     }[cloudStatus] || "";
-    return '<span class="cloud-status">' + label + '</span>';
+    return '<span class="cloud-status">' + escapeHtml(label) + '</span>';
   }
 
-  async function initCloudSync(){
-    if(!window.claude || typeof window.claude.use !== "function") { setCloudStatus("unavailable"); return; }
-    setCloudStatus("connecting");
-    var db;
-    try{ db = await window.claude.use("db"); }catch(e){ db = null; }
-    if(!db){ setCloudStatus("unavailable"); return; }
+  function showToast(msg){
+    var el = document.createElement("div");
+    el.className = "toast";
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(function(){ el.remove(); }, 9000);
+  }
 
-    var ref = db.doc("app/state");
-    try{
-      var snap = await ref.get();
-      if(snap.exists && snap.data()){
-        state = sanitizeState(snap.data());
-        render();
+  function sbAuth(path, body, token){
+    var headers = {"apikey":SB_KEY, "Content-Type":"application/json"};
+    if(token) headers["Authorization"] = "Bearer " + token;
+    return fetch(SB_URL + "/auth/v1/" + path, {method:"POST", headers:headers, body:JSON.stringify(body||{})})
+      .then(function(r){
+        return r.text().then(function(t){
+          var j = null; try{ j = t ? JSON.parse(t) : null; }catch(e){}
+          if(!r.ok) throw new Error((j && (j.msg || j.error_description || j.message || j.error)) || ("HTTP " + r.status));
+          return j;
+        });
+      });
+  }
+
+  function toSession(j){
+    return {
+      access_token:j.access_token, refresh_token:j.refresh_token,
+      expires_at:j.expires_at || (Math.floor(Date.now()/1000) + (j.expires_in || 3600)),
+      user:{id:j.user.id, email:j.user.email}
+    };
+  }
+  function readSession(){ try{ return JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); }catch(e){ return null; } }
+  function writeSession(s){
+    session = s;
+    try{ if(s) localStorage.setItem(SESSION_KEY, JSON.stringify(s)); else localStorage.removeItem(SESSION_KEY); }catch(e){}
+  }
+
+  function ensureFreshSession(){
+    if(!session) return Promise.reject(new Error("no session"));
+    if(session.expires_at - 60 > Date.now()/1000) return Promise.resolve(session);
+    return sbAuth("token?grant_type=refresh_token", {refresh_token:session.refresh_token}).then(function(j){
+      writeSession(toSession(j));
+      return session;
+    });
+  }
+
+  function sbRest(method, query, body, prefer){
+    return ensureFreshSession().then(function(s){
+      var headers = {"apikey":SB_KEY, "Authorization":"Bearer " + s.access_token, "Content-Type":"application/json"};
+      if(prefer) headers["Prefer"] = prefer;
+      return fetch(SB_URL + "/rest/v1/user_state" + query, {method:method, headers:headers, body: body ? JSON.stringify(body) : undefined});
+    }).then(function(r){
+      if(r.status === 401){ var ae = new Error("auth"); ae.auth = true; throw ae; }
+      return r.text().then(function(t){
+        var j = null; try{ j = t ? JSON.parse(t) : null; }catch(e){}
+        if(!r.ok){ var e2 = new Error((j && j.message) || ("HTTP " + r.status)); e2.status = r.status; throw e2; }
+        return j;
+      });
+    });
+  }
+
+  function myRow(select){ return "?select=" + select + "&user_id=eq." + encodeURIComponent(session.user.id); }
+
+  function adoptRemote(data){
+    var merged = Object.assign({}, data);
+    UI_FIELDS.forEach(function(k){ merged[k] = state[k]; });
+    state = sanitizeState(merged);
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+    lastPushedJson = JSON.stringify(dataPart());
+  }
+
+  function initialSync(){
+    return sbRest("GET", myRow("data,version")).then(function(rows){
+      if(rows && rows.length){
+        cloudVersion = rows[0].version;
+        adoptRemote(rows[0].data);
       } else {
-        await ref.set(state);
+        cloudVersion = null;
       }
-    }catch(e){ setCloudStatus("unavailable"); return; }
+      cloudReady = true;
+      if(!(rows && rows.length)) doPush();
+    });
+  }
 
-    cloudDoc = ref;
-    setCloudStatus("synced");
+  function schedulePush(){
+    if(JSON.stringify(dataPart()) === lastPushedJson) return;
+    setCloudStatus("saving");
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(doPush, 700);
+  }
 
-    ref.onSnapshot(function(snap){
-      if(!snap.exists || snap.metadata.hasPendingWrites) return;
-      var incoming = snap.data();
-      if(JSON.stringify(incoming) !== JSON.stringify(state)){
-        state = sanitizeState(incoming);
-        try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  function doPush(){
+    pushTimer = null;
+    if(pushing){ pushAgain = true; return; }
+    var json = JSON.stringify(dataPart());
+    if(json === lastPushedJson){ setCloudStatus("synced"); return; }
+    pushing = true;
+    var payload = JSON.parse(json);
+    var req = (cloudVersion === null)
+      ? sbRest("POST", "", {user_id:session.user.id, data:payload, version:1}, "return=representation")
+      : sbRest("PATCH", "?user_id=eq." + encodeURIComponent(session.user.id) + "&version=eq." + cloudVersion,
+               {data:payload, version:cloudVersion + 1, updated_at:new Date().toISOString()}, "return=representation");
+    req.then(function(rows){
+      if(rows && rows.length){
+        cloudVersion = rows[0].version;
+        lastPushedJson = json;
+        setCloudStatus("synced");
+      } else {
+        return handleConflict();
+      }
+    }).catch(function(e){
+      if(e.auth){ forceLogout("로그인이 만료됐어요. 다시 로그인해주세요."); return; }
+      if(e.status === 409 && cloudVersion === null){ return handleConflict(); }
+      setCloudStatus("offline");
+    }).then(function(){
+      pushing = false;
+      if(pushAgain){ pushAgain = false; doPush(); }
+    });
+  }
+
+  function handleConflict(){
+    return sbRest("GET", myRow("data,version")).then(function(rows){
+      if(rows && rows.length){
+        cloudVersion = rows[0].version;
+        adoptRemote(rows[0].data);
         render();
+        showToast("다른 기기에서 먼저 수정되어 최신 내용으로 불러왔어요. 방금 입력한 내용이 사라졌다면 다시 입력해주세요.");
       }
-    }, function(){
-      cloudDoc = null;
-      setCloudStatus("unavailable");
+      setCloudStatus("synced");
+    });
+  }
+
+  function pollCloud(){
+    if(!session) return;
+    if(!cloudReady){
+      initialSync().then(function(){ render(); setCloudStatus("synced"); }).catch(function(){});
+      return;
+    }
+    if(pushing || pushTimer) return;
+    if(JSON.stringify(dataPart()) !== lastPushedJson){ doPush(); return; }
+    var a = document.activeElement;
+    if(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;
+    sbRest("GET", myRow("version")).then(function(rows){
+      if(rows && rows.length && rows[0].version > cloudVersion){
+        return sbRest("GET", myRow("data,version")).then(function(full){
+          if(full && full.length){ cloudVersion = full[0].version; adoptRemote(full[0].data); render(); setCloudStatus("synced"); }
+        });
+      }
+      if(cloudStatus === "offline") setCloudStatus("synced");
+    }).catch(function(e){
+      if(e.auth) forceLogout("로그인이 만료됐어요. 다시 로그인해주세요.");
+      else setCloudStatus("offline");
+    });
+  }
+
+  function startPolling(){
+    if(pollStarted) return;
+    pollStarted = true;
+    setInterval(pollCloud, 30000);
+    document.addEventListener("visibilitychange", function(){ if(!document.hidden) pollCloud(); });
+  }
+
+  function renderLoading(msg){
+    document.getElementById("app").innerHTML = '<div class="login-wrap"><div class="login-card"><h1 class="login-title">무버</h1><p class="login-sub">' + escapeHtml(msg) + '</p></div></div>';
+  }
+
+  function renderLogin(msg, email){
+    document.getElementById("app").innerHTML =
+      '<div class="login-wrap"><form class="login-card" data-action="login-form">' +
+      '<h1 class="login-title">무버</h1>' +
+      '<p class="login-sub">로그인하면 어느 기기에서나 내 루틴과 매수기준이 이어져요.</p>' +
+      '<label class="login-field"><span>이메일</span><input type="email" name="email" autocomplete="username" required value="' + escapeHtml(email || "") + '"></label>' +
+      '<label class="login-field"><span>비밀번호</span><input type="password" name="password" autocomplete="current-password" required></label>' +
+      '<div class="login-msg" role="alert">' + escapeHtml(msg || "") + '</div>' +
+      '<button type="submit" class="login-btn">로그인</button>' +
+      '</form></div>';
+  }
+
+  function friendlyAuthError(err){
+    var m = String((err && err.message) || err);
+    if(/invalid login credentials/i.test(m)) return "이메일 또는 비밀번호가 맞지 않아요.";
+    if(/email not confirmed/i.test(m)) return "이메일 인증이 필요해요. 대시보드에서 사용자를 '자동 승인'으로 만들었는지 확인해주세요.";
+    if(err instanceof TypeError || /failed to fetch|networkerror/i.test(m)) return "인터넷 연결을 확인해주세요.";
+    return m;
+  }
+
+  function startSession(){
+    STORAGE_KEY = STORAGE_BASE + ":" + session.user.id;
+    state = loadState();
+    cloudReady = false; cloudVersion = null; lastPushedJson = "";
+    renderLoading("불러오는 중...");
+    initialSync().then(function(){
+      render();
+      setCloudStatus("synced");
+    }).catch(function(e){
+      if(e.auth){ forceLogout("로그인이 만료됐어요. 다시 로그인해주세요."); return; }
+      render();
+      setCloudStatus("offline");
+    });
+    startPolling();
+  }
+
+  function forceLogout(msg){
+    var email = session ? session.user.email : "";
+    var key = STORAGE_KEY;
+    writeSession(null);
+    cloudReady = false;
+    try{ localStorage.removeItem(key); }catch(e){}
+    STORAGE_KEY = STORAGE_BASE;
+    state = defaultState();
+    renderLogin(msg, email);
+  }
+
+  function logout(){
+    var token = session && session.access_token;
+    if(token) sbAuth("logout", {}, token).catch(function(){});
+    forceLogout("");
+  }
+
+  function bindAuthEvents(){
+    document.getElementById("app").addEventListener("submit", function(e){
+      var f = e.target.closest("[data-action='login-form']");
+      if(!f) return;
+      e.preventDefault();
+      var email = f.elements.email.value.trim(), password = f.elements.password.value;
+      var btn = f.querySelector(".login-btn");
+      btn.disabled = true; btn.textContent = "로그인 중...";
+      sbAuth("token?grant_type=password", {email:email, password:password}).then(function(j){
+        writeSession(toSession(j));
+        startSession();
+      }).catch(function(err){
+        renderLogin(friendlyAuthError(err), email);
+      });
+    });
+  }
+
+  function boot(){
+    if(!sbConfigured()){
+      state = loadState();
+      cloudStatus = "local";
+      render();
+      return;
+    }
+    bindAuthEvents();
+    session = readSession();
+    if(!session){ renderLogin(); return; }
+    ensureFreshSession().then(startSession).catch(function(e){
+      if(e instanceof TypeError){ startSession(); }
+      else { writeSession(null); renderLogin("다시 로그인해주세요."); }
     });
   }
 
@@ -820,7 +1063,10 @@
     html += '    <button class="nav-btn" data-action="next-month" title="다음 달">&#8250;</button>';
     html += '    <button class="today-btn" data-action="goto-today">오늘</button>';
     html += '  </div>';
-    html += '  <button class="icon-btn" data-action="toggle-settings">' + (state.settingsOpen? "설정 닫기":"⚙ 카테고리·루틴 설정") + '</button>';
+    html += '  <div class="toolbar-actions">';
+    html += '    <button class="icon-btn" data-action="toggle-settings">' + (state.settingsOpen? "설정 닫기":"⚙ 카테고리·루틴 설정") + '</button>';
+    if(sbConfigured() && session) html += '    <button class="icon-btn" data-action="logout" title="' + escapeHtml(session.user.email) + '">로그아웃</button>';
+    html += '  </div>';
     html += '</div>';
 
     html += renderSettingsPanel();
@@ -1348,6 +1594,7 @@
       case "show-day": state.view="day"; save(); render(); break;
       case "show-stats": state.view="stats"; save(); render(); break;
       case "show-buy": state.view="buy"; save(); render(); break;
+      case "logout": logout(); break;
       case "prev-month": changeMonth(-1); break;
       case "next-month": changeMonth(1); break;
       case "goto-today": {
@@ -1687,8 +1934,7 @@
     save(); render();
   }
 
-  render();
-  initCloudSync();
+  boot();
 })();
 </script>
 
