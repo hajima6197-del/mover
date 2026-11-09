@@ -1,0 +1,1696 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><title>무버</title><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found]){display:none!important}</style></head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#F3F3EF;
+    --surface:#FFFFFF;
+    --surface-2:#EBEAE3;
+    --border:#DEDCD3;
+    --border-soft:#E8E7E0;
+    --ink:#23262B;
+    --ink-muted:#6B6E73;
+    --ink-faint:#9B9E9C;
+    --accent:#3F4C82;
+    --accent-ink:#FFFFFF;
+    --accent-soft:#E9EAF3;
+    --success:#3F8F5F;
+    --danger:#B0503F;
+    --warning:#B07C2E;
+    --shadow: 0 1px 2px rgba(30,30,20,0.04), 0 8px 24px -12px rgba(30,30,20,0.18);
+
+    --cat-1:#5B7290;
+    --cat-2:#B15A67;
+    --cat-3:#5E8A66;
+    --cat-4:#C08A3E;
+    --cat-5:#7A6AA6;
+    --cat-6:#2F5D6B;
+
+    --tc-1:#B15A78;
+    --tc-2:#5E8A66;
+    --tc-3:#C99A3E;
+    --tc-4:#5B7290;
+    --tc-5:#7A6AA6;
+    --tc-6:#83879A;
+    --tc-none:#B9B7AE;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#14161A;
+      --surface:#1C1F26;
+      --surface-2:#242830;
+      --border:#31353E;
+      --border-soft:#282C34;
+      --ink:#E8E6E1;
+      --ink-muted:#9BA0AB;
+      --ink-faint:#6E7280;
+      --accent:#8B9AE8;
+      --accent-ink:#12141A;
+      --accent-soft:#242B45;
+      --success:#5FBE85;
+      --danger:#E08672;
+      --warning:#D9A44E;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 30px -14px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14161A;
+    --surface:#1C1F26;
+    --surface-2:#242830;
+    --border:#31353E;
+    --border-soft:#282C34;
+    --ink:#E8E6E1;
+    --ink-muted:#9BA0AB;
+    --ink-faint:#6E7280;
+    --accent:#8B9AE8;
+    --accent-ink:#12141A;
+    --accent-soft:#242B45;
+    --success:#5FBE85;
+    --danger:#E08672;
+    --warning:#D9A44E;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 30px -14px rgba(0,0,0,0.6);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Noto Sans KR',system-ui,sans-serif;
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:1180px;margin:0 auto;padding:28px 20px 80px;}
+
+  h1,h2,h3{font-family:'Gowun Batang','Noto Serif KR',serif;font-weight:700;text-wrap:balance;margin:0;}
+  .mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;}
+
+  button{font-family:inherit;cursor:pointer;}
+  input,textarea,select{font-family:inherit;color:inherit;}
+  input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-visible{
+    outline:2px solid var(--accent);outline-offset:1px;border-radius:3px;
+  }
+
+  /* ---- top nav ---- */
+  .tabs-wide{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;background:var(--surface-2);padding:5px;border-radius:13px;border:1px solid var(--border-soft);margin-bottom:16px;box-shadow:var(--shadow);}
+  .tab-wide-btn{border:none;background:transparent;padding:13px 14px;border-radius:9px;font-size:15px;font-weight:600;color:var(--ink-muted);font-family:'Gowun Batang',serif;letter-spacing:0.02em;}
+  .tab-wide-btn:hover{color:var(--ink);}
+  .tab-wide-btn.active{background:var(--surface);color:var(--accent);box-shadow:var(--shadow);}
+
+  .toolbar-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px;}
+
+  .month-nav{display:flex;align-items:center;gap:10px;}
+  .nav-btn{border:1px solid var(--border);background:var(--surface);width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--ink);}
+  .nav-btn:hover{background:var(--surface-2);}
+  .month-label{font-family:'Gowun Batang',serif;font-size:17px;min-width:108px;text-align:center;}
+  .today-btn{border:1px solid var(--border);background:var(--surface);padding:6px 12px;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--accent);}
+  .today-btn:hover{background:var(--accent-soft);}
+
+  .icon-btn{border:1px solid var(--border);background:var(--surface);padding:6px 12px;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--ink-muted);}
+  .icon-btn:hover{color:var(--ink);background:var(--surface-2);}
+
+  /* ---- settings panel ---- */
+  .settings{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:20px;box-shadow:var(--shadow);}
+  .settings[hidden]{display:none;}
+  .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;}
+  @media (max-width:720px){.settings-grid{grid-template-columns:1fr;}}
+  .settings h3{font-size:13px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.06em;font-family:'Noto Sans KR';margin-bottom:10px;}
+  .setting-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+  .setting-row input[type="text"]{flex:1;border:1px solid var(--border);background:var(--bg);border-radius:6px;padding:6px 8px;font-size:13px;}
+  .swatch{width:22px;height:22px;border-radius:6px;border:1px solid var(--border);padding:0;background:none;flex-shrink:0;}
+  .del-btn{border:none;background:transparent;color:var(--ink-faint);font-size:16px;width:22px;height:22px;border-radius:6px;flex-shrink:0;}
+  .del-btn:hover{color:var(--danger);background:var(--surface-2);}
+  .add-row-btn{border:1px dashed var(--border);background:transparent;color:var(--ink-muted);font-size:12.5px;padding:6px 10px;border-radius:6px;margin-top:2px;}
+  .add-row-btn:hover{color:var(--accent);border-color:var(--accent);}
+  .settings-grid .full-span{grid-column:1/-1;margin-top:6px;padding-top:16px;border-top:1px solid var(--border-soft);}
+  .tc-block{border:1px solid var(--border-soft);border-radius:8px;padding:10px 10px 8px;margin-bottom:10px;background:var(--bg);}
+  .tc-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .tc-head input[type="text"]{font-weight:600;}
+  .activity-row{display:flex;align-items:center;gap:8px;margin:0 0 6px 30px;}
+  .activity-row input[type="text"]{flex:1;border:1px solid var(--border);background:var(--surface);border-radius:6px;padding:5px 8px;font-size:12.5px;}
+  .activity-add{margin-left:30px;}
+
+  /* ---- monthly calendar ---- */
+  .month-summary{
+    display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;padding:12px 18px;margin-bottom:14px;box-shadow:var(--shadow);
+  }
+  .month-summary-label{font-size:12.5px;font-weight:600;color:var(--ink-muted);white-space:nowrap;}
+  .month-summary-pct{font-size:17px;font-weight:600;color:var(--accent);white-space:nowrap;}
+  .month-summary-track{flex:1;height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden;}
+  .month-summary-fill{height:100%;border-radius:4px;background:var(--accent);transition:width .2s;}
+  .month-summary-count{font-size:12px;color:var(--ink-muted);white-space:nowrap;}
+  @media (max-width:560px){ .month-summary{flex-wrap:wrap;} .month-summary-track{order:3;flex-basis:100%;} }
+
+  .weekday-row{display:grid;grid-template-columns:96px repeat(7,minmax(0,1fr));gap:1px;margin-bottom:6px;}
+  .weekday-row .wd{text-align:center;font-size:11.5px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.06em;padding-bottom:2px;}
+  .weekday-row .wd:first-child{visibility:hidden;}
+  .wd.sun{color:var(--danger);}
+  .wd.sat{color:var(--accent);}
+
+  .week-block{
+    display:grid;grid-template-columns:96px repeat(7,minmax(0,1fr));
+    background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;
+    margin-bottom:12px;box-shadow:var(--shadow);
+  }
+  .cal-row{display:contents;}
+  .cal-cell{border-right:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft);padding:5px 7px;min-height:32px;position:relative;}
+  .cal-row:last-child .cal-cell{border-bottom:none;}
+  .week-block .cal-row:first-child .cal-cell{border-bottom:1px solid var(--border);}
+  .cal-cell:nth-child(8){border-right:none;}
+
+  .date-cell{background:var(--surface-2);display:flex;align-items:center;gap:6px;padding:6px 8px;cursor:pointer;}
+  .date-cell:hover{background:var(--accent-soft);}
+  .date-cell .num{font-family:'IBM Plex Mono';font-weight:600;font-size:14px;}
+  .date-cell.other-month{opacity:0.42;}
+  .date-cell.is-today .num{background:var(--accent);color:var(--accent-ink);border-radius:5px;padding:1px 6px;}
+  .date-cell.sun .num{color:var(--danger);}
+  .date-cell.sat .num{color:var(--accent);}
+  .date-cell.holiday .num{color:var(--danger);}
+  .date-cell.is-today.sun .num,.date-cell.is-today.sat .num,.date-cell.is-today.holiday .num{color:var(--accent-ink);}
+  .holiday-dot{width:5px;height:5px;border-radius:50%;background:var(--danger);flex-shrink:0;}
+  .date-cell.is-today .holiday-dot{background:var(--accent-ink);}
+  .progress-dot{font-size:9.5px;color:var(--ink-faint);margin-left:auto;font-family:'IBM Plex Mono';}
+
+  .row-label-cell{display:flex;align-items:center;font-size:12px;font-weight:600;padding:5px 10px;color:var(--ink);}
+  .cal-cell.goal-cell{padding:2px 4px;}
+  .goal-input{width:100%;border:none;background:transparent;font-size:12.5px;padding:4px 5px;border-radius:4px;color:var(--ink);}
+  .goal-input::placeholder{color:var(--ink-faint);}
+  .goal-input:focus{background:var(--surface);box-shadow:inset 0 0 0 1px var(--accent);}
+
+  /* ---- daily view ---- */
+  .day-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+  .day-title-wrap{display:flex;align-items:center;gap:12px;}
+  .day-title{font-size:22px;}
+  .day-sub{font-size:12.5px;color:var(--ink-muted);}
+  .holiday-label{color:var(--danger);font-weight:600;}
+  .day-nav{display:flex;gap:8px;}
+
+  .day-grid{display:grid;grid-template-columns:1fr 340px;gap:18px;align-items:start;}
+  @media (max-width:900px){.day-grid{grid-template-columns:1fr;}}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);margin-bottom:16px;}
+  .card h2{font-size:15px;margin-bottom:12px;}
+  .card h2 .count{font-family:'IBM Plex Mono';font-size:12px;color:var(--ink-muted);font-weight:400;margin-left:6px;}
+
+  .month-rate{font-size:12px;color:var(--ink-muted);margin:-6px 0 14px;}
+  .month-rate strong{color:var(--accent);font-weight:600;}
+  .month-rate-sub{margin-left:4px;}
+
+  .goal-check-row{display:grid;grid-template-columns:96px 1fr 34px;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border-soft);}
+  .goal-check-row:last-child{border-bottom:none;}
+  .goal-cat-label{font-size:12.5px;font-weight:600;padding:3px 8px;border-radius:5px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .goal-text-input{border:1px solid var(--border);background:var(--bg);border-radius:6px;padding:7px 9px;font-size:13px;width:100%;}
+  .achieve-check{width:19px;height:19px;accent-color:var(--success);justify-self:center;cursor:pointer;}
+
+  .todo-groups{display:flex;flex-direction:column;gap:14px;}
+  .todo-group-title{font-size:12px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;}
+  .todo-item{display:flex;align-items:center;gap:8px;padding:4px 0;}
+  .todo-item input[type="checkbox"]{width:16px;height:16px;accent-color:var(--success);flex-shrink:0;}
+  .todo-item input[type="text"]{flex:1;border:none;background:transparent;font-size:13px;padding:3px 2px;border-bottom:1px solid transparent;}
+  .todo-item input[type="text"]:focus{border-bottom:1px solid var(--accent);}
+  .todo-item.done input[type="text"]{color:var(--ink-faint);text-decoration:line-through;}
+  .todo-item .del-btn{opacity:0;}
+  .todo-item:hover .del-btn{opacity:1;}
+  .todo-add{display:flex;gap:8px;margin-top:4px;}
+  .todo-add input{flex:1;border:1px dashed var(--border);background:transparent;border-radius:6px;padding:6px 9px;font-size:12.5px;}
+  .todo-add button{border:1px solid var(--border);background:var(--surface-2);border-radius:6px;padding:6px 11px;font-size:12px;font-weight:600;color:var(--ink-muted);}
+  .todo-add button:hover{color:var(--accent);border-color:var(--accent);}
+
+  .routine-item{display:flex;align-items:center;gap:9px;padding:5px 0;border-bottom:1px solid var(--border-soft);}
+  .routine-item:last-of-type{border-bottom:none;}
+  .routine-item input[type="checkbox"]{width:17px;height:17px;accent-color:var(--success);flex-shrink:0;}
+  .routine-item .rt-label{flex:1;font-size:13px;}
+  .routine-item.done .rt-label{color:var(--ink-faint);text-decoration:line-through;}
+  .routine-item input[type="text"]{flex:1;border:none;background:transparent;font-size:13px;padding:2px;}
+  .routine-item .del-btn{opacity:0;flex-shrink:0;}
+  .routine-item:hover .del-btn{opacity:1;}
+
+  .summary-input{width:100%;border:1px solid var(--border);background:var(--bg);border-radius:8px;padding:10px 12px;font-size:13.5px;resize:vertical;min-height:56px;font-family:'Noto Sans KR';}
+
+  .hour-table{display:flex;flex-direction:column;position:sticky;top:16px;}
+  .hour-row{display:grid;grid-template-columns:52px 1fr;gap:8px;align-items:center;padding:3px 0;}
+  .hour-label{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--ink-muted);text-align:right;padding-right:4px;}
+  .hour-select{
+    border:1px solid var(--border);border-left:4px solid var(--tc-none);background:var(--bg);color:var(--ink);
+    border-radius:6px;padding:6px 26px 6px 9px;font-size:12.5px;width:100%;transition:border-color .15s;
+    appearance:none;-webkit-appearance:none;
+    background-image:linear-gradient(45deg, transparent 50%, var(--ink-faint) 50%), linear-gradient(135deg, var(--ink-faint) 50%, transparent 50%);
+    background-position:calc(100% - 15px) center, calc(100% - 10px) center;
+    background-size:5px 5px, 5px 5px;background-repeat:no-repeat;
+  }
+
+  .empty-hint{font-size:12px;color:var(--ink-faint);padding:6px 0;}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-soft);}
+  .legend span{font-size:10.5px;color:var(--ink-muted);display:flex;align-items:center;gap:5px;}
+  .legend i{width:9px;height:9px;border-radius:2px;display:inline-block;}
+
+  /* ---- stats ---- */
+  .stats-list{display:flex;flex-direction:column;gap:16px;}
+  .stats-row-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
+  .stats-name{font-size:13.5px;font-weight:600;}
+  .stats-hours{font-size:13px;color:var(--ink-muted);}
+  .stats-track{height:10px;border-radius:5px;background:var(--surface-2);overflow:hidden;}
+  .stats-fill{height:100%;border-radius:5px;transition:width .2s;}
+  .stats-detail{margin-top:6px;font-size:12px;color:var(--ink-muted);}
+  .stats-detail summary{cursor:pointer;color:var(--ink-muted);}
+  .stats-detail summary:hover{color:var(--ink);}
+  .stats-activity-line{display:flex;justify-content:space-between;padding:4px 0 4px 4px;border-bottom:1px solid var(--border-soft);}
+
+  /* ---- buy criteria ---- */
+  .buy-intro{font-size:12.5px;color:var(--ink-muted);line-height:1.6;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:16px;box-shadow:var(--shadow);}
+  .buy-intro strong{color:var(--ink);font-weight:600;}
+  .buy-card{padding:0;overflow:hidden;}
+  .buy-verdict{padding:12px 18px;display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;background:var(--surface-2);border-bottom:1px solid var(--border-soft);}
+  .buy-verdict-label{font-weight:700;font-size:13.5px;}
+  .buy-verdict-detail{font-size:12px;color:var(--ink-muted);}
+  .buy-verdict-good .buy-verdict-label{color:var(--success);}
+  .buy-verdict-wait .buy-verdict-label{color:var(--warning);}
+  .buy-verdict-warn .buy-verdict-label{color:var(--warning);}
+  .buy-verdict-hard .buy-verdict-label{color:var(--danger);}
+  .buy-verdict-pending .buy-verdict-label{color:var(--ink-muted);}
+  .buy-head{display:flex;align-items:center;gap:8px;padding:14px 18px 4px;}
+  .buy-name-input{flex:1;border:none;background:transparent;font-family:'Gowun Batang',serif;font-size:18px;font-weight:700;color:var(--ink);padding:2px 0;}
+  .buy-section{padding:14px 18px;border-top:1px solid var(--border-soft);}
+  .buy-section-title{font-size:12.5px;font-weight:600;color:var(--ink-muted);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+  .buy-field-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;}
+  .buy-field{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--ink-muted);}
+  .buy-field input{border:1px solid var(--border);background:var(--bg);border-radius:6px;padding:7px 9px;font-size:13px;color:var(--ink);width:100%;}
+  .buy-result{margin-top:10px;font-size:12.5px;color:var(--ink-muted);display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  .buy-result strong{font-size:15px;color:var(--ink);}
+  .buy-gap{font-size:11.5px;padding:2px 8px;border-radius:10px;background:var(--surface-2);}
+  .buy-gap.good{color:var(--success);}
+  .buy-gap.wait{color:var(--warning);}
+  .fin-roe{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;background:var(--accent-soft);border:1px solid var(--accent);border-radius:8px;padding:10px 12px;margin-bottom:12px;}
+  .fin-roe-label{font-size:12px;font-weight:600;color:var(--accent);display:flex;align-items:center;gap:5px;}
+  .fin-roe-value{font-size:15px;font-weight:700;color:var(--ink);}
+  .fin-roe .fin-field-hint{width:100%;color:var(--ink-muted);}
+  .fin-roe.pass{border-color:var(--success);}
+  .fin-roe.pass .fin-roe-label{color:var(--success);}
+  .fin-roe.pass .fin-badge{background:var(--success);}
+  .fin-roe.fail{border-color:var(--danger);}
+  .fin-roe.fail .fin-roe-label{color:var(--danger);}
+  .fin-roe.fail .fin-badge{background:var(--danger);}
+  .fin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:10px;}
+  .fin-ref-row{margin-bottom:10px;max-width:220px;}
+  .fin-field{display:flex;flex-direction:column;gap:4px;}
+  .fin-field-label{font-size:11.5px;color:var(--ink-muted);display:flex;align-items:center;gap:5px;}
+  .fin-field input{border:1px solid var(--border);background:var(--bg);border-radius:6px;padding:7px 9px;font-size:13px;color:var(--ink);width:100%;}
+  .fin-field-hint{font-size:10px;color:var(--ink-faint);}
+  .fin-badge{width:15px;height:15px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9.5px;font-style:normal;color:#fff;flex-shrink:0;}
+  .fin-field.pass .fin-badge{background:var(--success);}
+  .fin-field.pass input{border-color:var(--success);}
+  .fin-field.fail .fin-badge{background:var(--danger);}
+  .fin-field.fail input{border-color:var(--danger);}
+  .toohard-row{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--ink-muted);padding-top:8px;border-top:1px dashed var(--border-soft);cursor:pointer;}
+  .toohard-row input{width:16px;height:16px;margin-top:1px;accent-color:var(--danger);flex-shrink:0;}
+  .toohard-row.checked{color:var(--danger);font-weight:600;}
+  .buy-reason{width:100%;border:1px solid var(--border);background:var(--bg);border-radius:8px;padding:12px 14px;font-size:13.5px;line-height:1.6;resize:vertical;min-height:130px;font-family:'Noto Sans KR';margin-bottom:10px;}
+  .buy-caution{margin-top:10px;font-size:12px;color:var(--warning);background:color-mix(in srgb, var(--warning) 12%, var(--surface));border:1px solid color-mix(in srgb, var(--warning) 35%, var(--border));border-radius:8px;padding:10px 12px;line-height:1.55;}
+  .buy-yesno{display:flex;gap:8px;margin-bottom:10px;}
+  .yesno-btn{flex:1;border:1px solid var(--border);background:var(--bg);border-radius:8px;padding:9px 10px;font-size:12.5px;font-weight:600;color:var(--ink-muted);}
+  .yesno-btn:hover{background:var(--surface-2);}
+  .yesno-btn.active-yes{background:color-mix(in srgb, var(--success) 18%, var(--surface));border-color:var(--success);color:var(--success);}
+  .yesno-btn.active-no{background:color-mix(in srgb, var(--danger) 14%, var(--surface));border-color:var(--danger);color:var(--danger);}
+  .buy-q2-note{font-size:12px;color:var(--ink-muted);}
+  .buy-q2-note strong{color:var(--ink);}
+  .buy-add-btn{width:100%;padding:12px;text-align:center;font-size:13px;}
+
+  .buy-final{padding:16px 18px;border-top:2px solid var(--border);background:var(--surface-2);}
+  .buy-final-title{font-size:12px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;}
+  .buy-final-scale{display:flex;gap:5px;margin-bottom:12px;}
+  .buy-final-seg{flex:1;height:8px;border-radius:4px;opacity:0.25;transition:opacity .15s, height .15s;}
+  .buy-final-seg.lvl-5{background:var(--danger);}
+  .buy-final-seg.lvl-4{background:color-mix(in srgb, var(--warning) 55%, var(--danger) 45%);}
+  .buy-final-seg.lvl-3{background:var(--warning);}
+  .buy-final-seg.lvl-2{background:color-mix(in srgb, var(--success) 55%, var(--warning) 45%);}
+  .buy-final-seg.lvl-1{background:var(--success);}
+  .buy-final-seg.active{opacity:1;height:13px;margin-top:-2.5px;}
+  .buy-final-label{font-family:'Gowun Batang',serif;font-size:21px;font-weight:700;margin-bottom:5px;text-wrap:balance;}
+  .buy-final-label.lvl-5{color:var(--danger);}
+  .buy-final-label.lvl-4{color:color-mix(in srgb, var(--warning) 55%, var(--danger) 45%);}
+  .buy-final-label.lvl-3{color:var(--warning);}
+  .buy-final-label.lvl-2{color:color-mix(in srgb, var(--success) 55%, var(--warning) 45%);}
+  .buy-final-label.lvl-1{color:var(--success);}
+  .buy-final-desc{font-size:12.5px;color:var(--ink-muted);line-height:1.5;}
+
+  footer.note{margin-top:26px;font-size:11.5px;color:var(--ink-faint);text-align:center;}
+</style>
+
+<div class="app" id="app"></div>
+
+<script>
+(function(){
+  "use strict";
+  var STORAGE_KEY = "routine-planner-state-v1";
+
+  var DEFAULT_CATEGORIES = [
+    {id:"cat-personal", name:"개인일정", color:"var(--cat-1)"},
+    {id:"cat-invest",   name:"투자",     color:"var(--cat-2)"},
+    {id:"cat-capability",name:"개인역량", color:"var(--cat-3)"},
+    {id:"cat-read",     name:"독서",     color:"var(--cat-4)"},
+    {id:"cat-exercise", name:"운동",     color:"var(--cat-5)"},
+    {id:"cat-buycriteria", name:"투자 매수기준", color:"var(--cat-6)"}
+  ];
+  var DEFAULT_TEMPLATES = [
+    {id:"rt-read", name:"매일 독서"},
+    {id:"rt-exercise", name:"매일 운동"}
+  ];
+  var HOURS = [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4];
+  var WEEKDAYS = ["일","월","화","수","목","금","토"];
+  // 대한민국 법정공휴일 (대체공휴일 포함). 음력 기반(설날·추석·부처님오신날)이라 연도마다 날짜가
+  // 달라져서 확인된 연도만 채워뒀어요 — 필요한 연도가 없으면 알려주시면 추가해드릴게요.
+  var HOLIDAYS_KR = {
+    "2025-01-01":"신정", "2025-01-28":"설날 연휴", "2025-01-29":"설날", "2025-01-30":"설날 연휴",
+    "2025-03-01":"삼일절", "2025-03-03":"대체공휴일(삼일절)",
+    "2025-05-05":"어린이날·부처님오신날", "2025-05-06":"대체공휴일",
+    "2025-06-06":"현충일", "2025-08-15":"광복절", "2025-10-03":"개천절",
+    "2025-10-05":"추석 연휴", "2025-10-06":"추석", "2025-10-07":"추석 연휴", "2025-10-08":"대체공휴일(추석)",
+    "2025-10-09":"한글날", "2025-12-25":"크리스마스",
+
+    "2026-01-01":"신정", "2026-02-16":"설날 연휴", "2026-02-17":"설날", "2026-02-18":"설날 연휴",
+    "2026-03-01":"삼일절", "2026-03-02":"대체공휴일(삼일절)",
+    "2026-05-05":"어린이날", "2026-05-24":"부처님오신날", "2026-05-25":"대체공휴일(부처님오신날)",
+    "2026-06-06":"현충일", "2026-08-15":"광복절", "2026-08-17":"대체공휴일(광복절)",
+    "2026-09-24":"추석 연휴", "2026-09-25":"추석", "2026-09-26":"추석 연휴",
+    "2026-10-03":"개천절", "2026-10-05":"대체공휴일(개천절)", "2026-10-09":"한글날", "2026-12-25":"크리스마스",
+
+    "2027-01-01":"신정", "2027-02-06":"설날 연휴", "2027-02-07":"설날", "2027-02-08":"설날 연휴", "2027-02-09":"설날 연휴",
+    "2027-03-01":"삼일절", "2027-05-05":"어린이날", "2027-05-13":"부처님오신날",
+    "2027-06-06":"현충일", "2027-06-07":"대체공휴일(현충일)",
+    "2027-08-15":"광복절", "2027-08-16":"대체공휴일(광복절)",
+    "2027-09-14":"추석 연휴", "2027-09-15":"추석", "2027-09-16":"추석 연휴",
+    "2027-10-03":"개천절", "2027-10-04":"대체공휴일(개천절)", "2027-10-09":"한글날", "2027-10-11":"대체공휴일(한글날)",
+    "2027-12-25":"크리스마스", "2027-12-27":"대체공휴일(크리스마스)"
+  };
+  var DEFAULT_TIME_CATEGORIES = [
+    {id:"tc-invest", name:"투자", color:"var(--tc-1)", activities:[
+      {id:"act-read", name:"독서"},
+      {id:"act-market", name:"시황분석"},
+      {id:"act-field", name:"임장"},
+      {id:"act-lecture", name:"강의/스터디"}
+    ]},
+    {id:"tc-family", name:"가족", color:"var(--tc-2)", activities:[
+      {id:"act-parents", name:"부모님"},
+      {id:"act-date", name:"데이트"},
+      {id:"act-family-etc", name:"가족모임"}
+    ]},
+    {id:"tc-work", name:"업무", color:"var(--tc-3)", activities:[
+      {id:"act-commute-in", name:"출근"},
+      {id:"act-work", name:"업무"},
+      {id:"act-commute-out", name:"퇴근"},
+      {id:"act-overtime", name:"야근"},
+      {id:"act-trip", name:"출장"}
+    ]},
+    {id:"tc-health", name:"건강", color:"var(--tc-4)", activities:[
+      {id:"act-exercise", name:"운동"},
+      {id:"act-meal", name:"식사"},
+      {id:"act-shower", name:"샤워"},
+      {id:"act-selfcare", name:"개인정비"},
+      {id:"act-stretch", name:"스트레칭"}
+    ]},
+    {id:"tc-sleep", name:"수면·휴식", color:"var(--tc-5)", activities:[
+      {id:"act-sleep", name:"수면"},
+      {id:"act-wake", name:"기상"},
+      {id:"act-rest", name:"휴식"}
+    ]},
+    {id:"tc-etc", name:"기타", color:"var(--tc-6)", activities:[
+      {id:"act-move", name:"이동"},
+      {id:"act-house", name:"집안일"},
+      {id:"act-plan", name:"계획/기록"}
+    ]}
+  ];
+
+  function uid(prefix){ return prefix + "-" + Math.random().toString(36).slice(2,9); }
+  function pad(n){ return n<10 ? "0"+n : ""+n; }
+  function dateKey(y,m,d){ return y+"-"+pad(m+1)+"-"+pad(d); }
+  function keyOf(date){ return dateKey(date.getFullYear(), date.getMonth(), date.getDate()); }
+  function sameDay(a,b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+  function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function cloneTimeCategories(){ return JSON.parse(JSON.stringify(DEFAULT_TIME_CATEGORIES)); }
+
+  function defaultState(){
+    var now = new Date();
+    return {
+      view: "month",
+      year: now.getFullYear(),
+      month: now.getMonth(),
+      selectedDate: keyOf(now),
+      settingsOpen: false,
+      categories: DEFAULT_CATEGORIES.slice(),
+      templates: DEFAULT_TEMPLATES.slice(),
+      timeCategories: cloneTimeCategories(),
+      buyChecklists: [],
+      days: {}
+    };
+  }
+
+  function sanitizeState(parsed){
+    var def = defaultState();
+    parsed.categories = parsed.categories && parsed.categories.length ? parsed.categories : def.categories;
+    if(!parsed.categories.some(function(c){ return c.id === "cat-buycriteria"; })){
+      parsed.categories.push({id:"cat-buycriteria", name:"투자 매수기준", color:"var(--cat-6)"});
+    }
+    parsed.templates = parsed.templates || def.templates;
+    parsed.timeCategories = parsed.timeCategories && parsed.timeCategories.length ? parsed.timeCategories : def.timeCategories;
+    parsed.buyChecklists = parsed.buyChecklists || [];
+    parsed.days = parsed.days || {};
+    if(!parsed.selectedDate) parsed.selectedDate = def.selectedDate;
+    if(typeof parsed.year !== "number") parsed.year = def.year;
+    if(typeof parsed.month !== "number") parsed.month = def.month;
+    if(!parsed.view) parsed.view = "month";
+    return parsed;
+  }
+
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return defaultState();
+      return sanitizeState(JSON.parse(raw));
+    }catch(e){ return defaultState(); }
+  }
+
+  var state = loadState();
+  var cloudDoc = null;
+  var cloudStatus = "local"; // local | connecting | synced | unavailable
+
+  function save(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+    if(cloudDoc){
+      cloudDoc.set(state).catch(function(){ /* next save() retries */ });
+    }
+  }
+
+  function setCloudStatus(s){
+    cloudStatus = s;
+    var el = app && app.querySelector(".cloud-status");
+    if(el) el.outerHTML = renderCloudStatus();
+  }
+
+  function renderCloudStatus(){
+    var label = {
+      local: "이 브라우저에만 저장됨 (localStorage)",
+      connecting: "클라우드 동기화 연결 중...",
+      synced: "☁ Claude 계정으로 동기화됨 — 로그인하면 어느 기기에서나 이어서 볼 수 있어요",
+      unavailable: "이 브라우저에만 저장됨 (클라우드 동기화 사용 불가)"
+    }[cloudStatus] || "";
+    return '<span class="cloud-status">' + label + '</span>';
+  }
+
+  async function initCloudSync(){
+    if(!window.claude || typeof window.claude.use !== "function") { setCloudStatus("unavailable"); return; }
+    setCloudStatus("connecting");
+    var db;
+    try{ db = await window.claude.use("db"); }catch(e){ db = null; }
+    if(!db){ setCloudStatus("unavailable"); return; }
+
+    var ref = db.doc("app/state");
+    try{
+      var snap = await ref.get();
+      if(snap.exists && snap.data()){
+        state = sanitizeState(snap.data());
+        render();
+      } else {
+        await ref.set(state);
+      }
+    }catch(e){ setCloudStatus("unavailable"); return; }
+
+    cloudDoc = ref;
+    setCloudStatus("synced");
+
+    ref.onSnapshot(function(snap){
+      if(!snap.exists || snap.metadata.hasPendingWrites) return;
+      var incoming = snap.data();
+      if(JSON.stringify(incoming) !== JSON.stringify(state)){
+        state = sanitizeState(incoming);
+        try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+        render();
+      }
+    }, function(){
+      cloudDoc = null;
+      setCloudStatus("unavailable");
+    });
+  }
+
+  function getDay(key){
+    return state.days[key] || {};
+  }
+  function ensureDay(key){
+    if(!state.days[key]) state.days[key] = {};
+    return state.days[key];
+  }
+  function getGoal(key, catId){
+    var d = getDay(key);
+    return (d.goals && d.goals[catId]) || "";
+  }
+  function setGoal(key, catId, val){
+    var d = ensureDay(key);
+    if(!d.goals) d.goals = {};
+    d.goals[catId] = val;
+    save();
+  }
+  function getAchieved(key, catId){
+    var d = getDay(key);
+    return !!(d.achieved && d.achieved[catId]);
+  }
+  function setAchieved(key, catId, val){
+    var d = ensureDay(key);
+    if(!d.achieved) d.achieved = {};
+    d.achieved[catId] = val;
+    save();
+  }
+  function getTodos(key, group){
+    var d = getDay(key);
+    return (d.todos && d.todos[group]) || [];
+  }
+  function setTodos(key, group, arr){
+    var d = ensureDay(key);
+    if(!d.todos) d.todos = {ei:[], i:[], u:[]};
+    d.todos[group] = arr;
+    save();
+  }
+  function getRoutineCheck(key, tplId){
+    var d = getDay(key);
+    return !!(d.routineChecks && d.routineChecks[tplId]);
+  }
+  function setRoutineCheck(key, tplId, val){
+    var d = ensureDay(key);
+    if(!d.routineChecks) d.routineChecks = {};
+    d.routineChecks[tplId] = val;
+    save();
+  }
+  function getExtraRoutines(key){
+    var d = getDay(key);
+    return d.extraRoutines || [];
+  }
+  function setExtraRoutines(key, arr){
+    var d = ensureDay(key);
+    d.extraRoutines = arr;
+    save();
+  }
+  function getHourly(key, hour){
+    var d = getDay(key);
+    return (d.hourly && d.hourly[hour]) || "";
+  }
+  function setHourly(key, hour, val){
+    var d = ensureDay(key);
+    if(!d.hourly) d.hourly = {};
+    d.hourly[hour] = val;
+    save();
+  }
+  function getSummary(key){
+    return getDay(key).summary || "";
+  }
+  function setSummary(key, val){
+    var d = ensureDay(key);
+    d.summary = val;
+    save();
+  }
+
+  function findActivity(actId){
+    if(!actId) return null;
+    for(var i=0;i<state.timeCategories.length;i++){
+      var cat = state.timeCategories[i];
+      for(var j=0;j<cat.activities.length;j++){
+        if(cat.activities[j].id === actId) return {category:cat, activity:cat.activities[j]};
+      }
+    }
+    return null;
+  }
+  function colorForActivity(actId){
+    var found = findActivity(actId);
+    return found ? found.category.color : "var(--tc-none)";
+  }
+  function computeMonthStats(year, month){
+    var totals = {}, activityTotals = {};
+    var prefix = year + "-" + pad(month+1) + "-";
+    Object.keys(state.days).forEach(function(key){
+      if(key.indexOf(prefix) !== 0) return;
+      var hourly = state.days[key].hourly;
+      if(!hourly) return;
+      Object.keys(hourly).forEach(function(h){
+        var actId = hourly[h];
+        var found = findActivity(actId);
+        if(!found) return;
+        var catId = found.category.id;
+        totals[catId] = (totals[catId]||0) + 1;
+        if(!activityTotals[catId]) activityTotals[catId] = {};
+        activityTotals[catId][actId] = (activityTotals[catId][actId]||0) + 1;
+      });
+    });
+    return {totals:totals, activityTotals:activityTotals};
+  }
+
+  function getWeeksOfMonth(year, month){
+    var first = new Date(year, month, 1);
+    var last = new Date(year, month+1, 0);
+    var start = new Date(first); start.setDate(first.getDate() - first.getDay());
+    var end = new Date(last); end.setDate(last.getDate() + (6 - last.getDay()));
+    var weeks = [];
+    var cursor = new Date(start);
+    while(cursor <= end){
+      var week = [];
+      for(var i=0;i<7;i++){
+        week.push(new Date(cursor));
+        cursor.setDate(cursor.getDate()+1);
+      }
+      weeks.push(week);
+    }
+    return weeks;
+  }
+
+  function goalProgress(key){
+    var cats = state.categories;
+    var filled = 0, done = 0;
+    cats.forEach(function(c){
+      if(getGoal(key,c.id)){ filled++; if(getAchieved(key,c.id)) done++; }
+    });
+    return {filled:filled, done:done};
+  }
+
+  function computeMonthGoalStats(year, month){
+    var byCat = {}, totalFilled = 0, totalAchieved = 0;
+    var prefix = year + "-" + pad(month+1) + "-";
+    Object.keys(state.days).forEach(function(key){
+      if(key.indexOf(prefix) !== 0) return;
+      var day = state.days[key];
+      if(!day.goals) return;
+      state.categories.forEach(function(cat){
+        var goalText = day.goals[cat.id];
+        if(!goalText) return;
+        if(!byCat[cat.id]) byCat[cat.id] = {filled:0, achieved:0};
+        byCat[cat.id].filled++;
+        totalFilled++;
+        if(day.achieved && day.achieved[cat.id]){
+          byCat[cat.id].achieved++;
+          totalAchieved++;
+        }
+      });
+    });
+    return {byCat:byCat, totalFilled:totalFilled, totalAchieved:totalAchieved};
+  }
+
+  /* ---------------- 투자 매수기준 ---------------- */
+  // 버핏·멍거가 실제로 보는 정량 지표. 모두 증권 앱의 "기업실적분석/재무비율" 표에
+  // 그대로 나오는 숫자라, 따로 조사하지 않고 그대로 옮겨 적을 수 있습니다.
+  // ROE는 PER·PBR만으로 정확히 계산됩니다: ROE = EPS/BPS = (가격/PER)/(가격/PBR) = PBR/PER.
+  // 추측이 아니라 회계적으로 성립하는 항등식이라, 종목명·현재가·PER·PBR을 입력하면 자동으로 채워집니다.
+  var ROE_METRIC = {key:"roe", label:"ROE (자기자본이익률, %)", hint:"ROE = PBR ÷ PER × 100 — PER·PBR 입력만으로 자동 계산돼요 (15% 이상 우수)", good:function(v){ return v>=15; }};
+  function computeROE(item){
+    var per = parseFloat(item.per), pbr = parseFloat(item.pbr);
+    if(!per || !pbr || per<=0 || pbr<=0) return null;
+    return (pbr/per)*100;
+  }
+
+  // 아래 3개는 영업이익률·부채비율·유동비율처럼 손익계산서·재무상태표에만 있는 별도 수치라
+  // PER·PBR·가격 어떤 조합으로도 계산해낼 수 없어요 — 증권 앱 재무비율 탭에서 그대로 옮겨 적어야 합니다.
+  var FIN_METRICS = [
+    {key:"opMargin", label:"영업이익률 (%)", hint:"10% 이상이면 양호 (업종별 편차 있음)", good:function(v){ return v>=10; }},
+    {key:"debtRatio", label:"부채비율 (%)", hint:"100% 이하면 안전, 낮을수록 좋음", good:function(v){ return v<=100; }},
+    {key:"currentRatio", label:"유동비율 (%)", hint:"100% 이상이면 단기 상환능력 안전", good:function(v){ return v>=100; }}
+  ];
+  var FIN_REF_METRIC = {key:"divYield", label:"배당수익률 (%)", hint:"주주환원 참고용 — 성장기업은 낮아도 무방해요"};
+
+  function newBuyItem(){
+    return {
+      id: uid("buy"),
+      name: "",
+      currentPrice: "", per: "", pbr: "",
+      safetyMargin: 40,
+      financials: {}, tooHard: false,
+      q1Reason: "", q1Answer: null,
+      memo: ""
+    };
+  }
+
+  // 벤저민 그레이엄의 내재가치 근사식: V = 가격 × √(22.5 ÷ (PER×PBR))
+  // (= √(22.5 × EPS × BPS), EPS=가격/PER, BPS=가격/PBR 로 대입해 정리한 것과 동일)
+  // 성장률·할인율 같은 주관적 가정 없이, 현재가·PER·PBR 세 숫자만으로 계산되는 것이 장점입니다.
+  function computeGrahamValue(item){
+    var price = parseFloat(item.currentPrice), per = parseFloat(item.per), pbr = parseFloat(item.pbr);
+    if(!price || !per || !pbr || per<=0 || pbr<=0) return null;
+    return price * Math.sqrt(22.5/(per*pbr));
+  }
+
+  function finScore(item){
+    var f = item.financials || {};
+    var checked = FIN_METRICS.reduce(function(n,m){
+      var v = parseFloat(f[m.key]);
+      return n + (f[m.key]!=="" && f[m.key]!=null && !isNaN(v) && m.good(v) ? 1 : 0);
+    }, 0);
+    var roe = computeROE(item);
+    if(roe!=null && ROE_METRIC.good(roe)) checked++;
+    return {checked:checked, total:FIN_METRICS.length + 1};
+  }
+
+  function computeBuyDerived(item){
+    var iv = computeGrahamValue(item);
+    var margin = parseFloat(item.safetyMargin);
+    var buyTarget = (iv!=null && !isNaN(margin)) ? iv * (1 - margin/100) : null;
+    var price = parseFloat(item.currentPrice);
+    var gapPct = (buyTarget!=null && !isNaN(price) && price>0) ? Math.round((price - buyTarget)/buyTarget*1000)/10 : null;
+    var fin = finScore(item);
+    var perInvalid = item.per !== "" && parseFloat(item.per) <= 0;
+    var verdict;
+    if(item.tooHard){
+      verdict = {level:"hard", label:"판단 보류 · Too Hard", detail:"사업 구조가 복잡하거나 예측이 어려워 판단 대상에서 제외했습니다."};
+    } else if(item.q1Answer !== true){
+      verdict = {level:"pending", label:"① 질문 미확정", detail:"“10년 뒤에도 더 벌 수밖에 없는 이유”에 먼저 답해보세요."};
+    } else if(fin.checked < Math.ceil(fin.total/2)){
+      verdict = {level:"warn", label:"재무 지표 부족", detail:"통과한 항목이 " + fin.checked + "/" + fin.total + "개뿐이에요. 숫자를 다시 확인해보세요."};
+    } else if(iv==null || isNaN(price) || !price){
+      verdict = {level:"pending", label:"현재가·PER·PBR 입력 필요", detail:"세 숫자를 입력하면 매수 여부를 계산합니다."};
+    } else if(price <= buyTarget){
+      verdict = {level:"good", label:"매수 기준 충족", detail:"목표가 대비 " + Math.abs(gapPct) + "% 낮은 가격이에요."};
+    } else {
+      verdict = {level:"wait", label:"가격 대기 중", detail:"목표가까지 약 " + gapPct + "% 더 하락해야 해요."};
+    }
+    var rating = computeFinalRating(item, fin, buyTarget, gapPct);
+    return {iv:iv, buyTarget:buyTarget, gapPct:gapPct, perInvalid:perInvalid, fin:fin, verdict:verdict, rating:rating};
+  }
+
+  // 최종 5단계 매수 적합도: 사업 확신(질문①) · 재무 건전성 · 가격 매력도를 종합합니다.
+  function computeFinalRating(item, fin, buyTarget, gapPct){
+    var finOK = fin.checked >= Math.ceil(fin.total/2);
+    var finStrong = fin.checked >= fin.total - (fin.total>1?1:0);
+    var priceKnown = buyTarget!=null && gapPct!=null;
+    var priceOK = priceKnown && gapPct<=0;
+
+    if(item.tooHard){
+      return {level:5, label:"회피", desc:"판단이 너무 어려운 사업으로 분류돼 매수 후보에서 제외했어요."};
+    }
+    if(item.q1Answer !== true){
+      return {level:4, label:"보완 필요", desc:'멍거의 질문① "10년 뒤에도 더 벌 수밖에 없는 이유"에 먼저 명확히 답해보세요.'};
+    }
+    if(!finOK){
+      return {level:4, label:"보완 필요", desc:"재무 지표 통과 항목이 " + fin.checked + "/" + fin.total + "개뿐이에요. 숫자를 다시 확인해보세요."};
+    }
+    if(!priceKnown){
+      return {level:3, label:"관찰 · 대기", desc:"재무는 양호해요. 현재가·PER·PBR을 채우면 가격 매력도까지 판단할 수 있어요."};
+    }
+    if(!priceOK){
+      return {level:3, label:"관찰 · 대기", desc:"재무는 양호하지만 아직 목표가보다 " + Math.abs(gapPct) + "% 비싸요. 가격이 내려오길 기다려보세요."};
+    }
+    if(!finStrong){
+      return {level:2, label:"매수 후보", desc:"재무·가격 조건을 대체로 충족했어요. 나머지 지표도 한 번 더 점검해보세요."};
+    }
+    return {level:1, label:"적극 매수 고려", desc:"사업 확신·재무 건전성·가격 매력도를 모두 갖췄어요."};
+  }
+
+  function findBuyItem(id){
+    return state.buyChecklists.find(function(x){ return x.id===id; });
+  }
+
+  /* ---------------- render: shell ---------------- */
+  function render(){
+    var app = document.getElementById("app");
+    var monthLabel = state.year + "년 " + (state.month+1) + "월";
+    var html = "";
+    html += '<div class="tabs-wide">';
+    html += '  <button class="tab-wide-btn' + (state.view==="month"?" active":"") + '" data-action="show-month">월간</button>';
+    html += '  <button class="tab-wide-btn' + (state.view==="day"?" active":"") + '" data-action="show-day">일간</button>';
+    html += '  <button class="tab-wide-btn' + (state.view==="stats"?" active":"") + '" data-action="show-stats">통계</button>';
+    html += '  <button class="tab-wide-btn' + (state.view==="buy"?" active":"") + '" data-action="show-buy">매수기준</button>';
+    html += '</div>';
+    html += '<div class="toolbar-row">';
+    html += '  <div class="month-nav">';
+    html += '    <button class="nav-btn" data-action="prev-month" title="이전 달">&#8249;</button>';
+    html += '    <span class="month-label mono">' + monthLabel + '</span>';
+    html += '    <button class="nav-btn" data-action="next-month" title="다음 달">&#8250;</button>';
+    html += '    <button class="today-btn" data-action="goto-today">오늘</button>';
+    html += '  </div>';
+    html += '  <button class="icon-btn" data-action="toggle-settings">' + (state.settingsOpen? "설정 닫기":"⚙ 카테고리·루틴 설정") + '</button>';
+    html += '</div>';
+
+    html += renderSettingsPanel();
+
+    if(state.view === "month"){
+      html += renderMonthView();
+    } else if(state.view === "day"){
+      html += renderDayView(state.selectedDate);
+    } else if(state.view === "stats"){
+      html += renderStatsView();
+    } else {
+      html += renderBuyView();
+    }
+
+    html += '<footer class="note">' + renderCloudStatus() + '</footer>';
+
+    app.innerHTML = html;
+  }
+
+  function renderSettingsPanel(){
+    if(!state.settingsOpen) return '<div class="settings" hidden></div>';
+    var html = '<div class="settings"><div class="settings-grid">';
+    html += '<div><h3>카테고리 (월간 목표 항목)</h3>';
+    state.categories.forEach(function(c){
+      html += '<div class="setting-row" data-cat-id="'+c.id+'">';
+      html += '  <input type="color" class="swatch" data-action="cat-color" value="'+cssVarToHex(c.color)+'">';
+      html += '  <input type="text" data-action="cat-name" value="'+escapeHtml(c.name)+'" placeholder="카테고리명">';
+      html += '  <button class="del-btn" data-action="cat-del" title="삭제">&times;</button>';
+      html += '</div>';
+    });
+    html += '<button class="add-row-btn" data-action="cat-add">+ 카테고리 추가</button>';
+    html += '</div>';
+
+    html += '<div><h3>매일 루틴 템플릿</h3>';
+    state.templates.forEach(function(t){
+      html += '<div class="setting-row" data-tpl-id="'+t.id+'">';
+      html += '  <input type="text" data-action="tpl-name" value="'+escapeHtml(t.name)+'" placeholder="루틴명">';
+      html += '  <button class="del-btn" data-action="tpl-del" title="삭제">&times;</button>';
+      html += '</div>';
+    });
+    html += '<button class="add-row-btn" data-action="tpl-add">+ 루틴 추가</button>';
+    html += '</div>';
+
+    html += '<div class="full-span"><h3>시간 계획표 카테고리 · 활동</h3>';
+    state.timeCategories.forEach(function(tc){
+      html += '<div class="tc-block" data-tc-id="'+tc.id+'">';
+      html += '  <div class="tc-head">';
+      html += '    <input type="color" class="swatch" data-action="tc-color" value="'+cssVarToHex(tc.color)+'">';
+      html += '    <input type="text" data-action="tc-name" value="'+escapeHtml(tc.name)+'" placeholder="카테고리명">';
+      html += '    <button class="del-btn" data-action="tc-del" title="카테고리 삭제">&times;</button>';
+      html += '  </div>';
+      tc.activities.forEach(function(act){
+        html += '  <div class="activity-row" data-act-id="'+act.id+'">';
+        html += '    <input type="text" data-action="act-name" value="'+escapeHtml(act.name)+'" placeholder="활동명">';
+        html += '    <button class="del-btn" data-action="act-del" data-tc="'+tc.id+'" data-act="'+act.id+'" title="활동 삭제">&times;</button>';
+        html += '  </div>';
+      });
+      html += '  <button class="add-row-btn activity-add" data-action="act-add" data-tc="'+tc.id+'">+ 활동 추가</button>';
+      html += '</div>';
+    });
+    html += '<button class="add-row-btn" data-action="tc-add">+ 카테고리 추가</button>';
+    html += '</div>';
+
+    html += '</div></div>';
+    return html;
+  }
+
+  function cssVarToHex(v){
+    if(v.indexOf("var(")===0){
+      var name = v.slice(4,-1);
+      var real = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return colorToHex(real) || "#888888";
+    }
+    return v;
+  }
+  function colorToHex(c){
+    if(!c) return null;
+    if(c[0]==="#") return c;
+    var m = c.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if(!m) return null;
+    return "#" + [m[1],m[2],m[3]].map(function(x){ return (+x).toString(16).padStart(2,"0"); }).join("");
+  }
+
+  /* ---------------- render: month ---------------- */
+  function renderMonthView(){
+    var weeks = getWeeksOfMonth(state.year, state.month);
+    var today = new Date();
+    var html = "";
+
+    var monthGoalStats = computeMonthGoalStats(state.year, state.month);
+    var monthPct = monthGoalStats.totalFilled ? Math.round(monthGoalStats.totalAchieved/monthGoalStats.totalFilled*100) : 0;
+    html += '<div class="month-summary">';
+    html += '  <span class="month-summary-label">이번 달 목표 달성률</span>';
+    html += '  <span class="month-summary-pct mono">' + monthPct + '%</span>';
+    html += '  <div class="month-summary-track"><div class="month-summary-fill" style="width:'+monthPct+'%;"></div></div>';
+    html += '  <span class="month-summary-count mono">' + monthGoalStats.totalAchieved + ' / ' + monthGoalStats.totalFilled + ' 완료</span>';
+    html += '</div>';
+
+    html += '<div class="weekday-row"><div></div>';
+    WEEKDAYS.forEach(function(w,i){
+      html += '<div class="wd' + (i===0?" sun":"") + (i===6?" sat":"") + '">' + w + '</div>';
+    });
+    html += '</div>';
+
+    weeks.forEach(function(week){
+      html += '<div class="week-block">';
+      html += '<div class="cal-row">';
+      html += '<div class="cal-cell row-label-cell">&nbsp;</div>';
+      week.forEach(function(d,i){
+        var isOther = d.getMonth() !== state.month;
+        var isToday = sameDay(d, today);
+        var key = keyOf(d);
+        var holidayName = HOLIDAYS_KR[key];
+        var cls = "date-cell" + (isOther?" other-month":"") + (isToday?" is-today":"") + (i===0?" sun":"") + (i===6?" sat":"") + (holidayName?" holiday":"");
+        var prog = goalProgress(key);
+        var progText = prog.filled ? (prog.done + "/" + prog.filled) : "";
+        html += '<div class="cal-cell '+cls+'" data-action="open-day" data-date="'+key+'"'+(holidayName?(' title="'+escapeHtml(holidayName)+'"'):'')+'>';
+        html += '  <span class="num">' + d.getDate() + '</span>';
+        if(holidayName) html += '<span class="holiday-dot" aria-hidden="true"></span>';
+        if(progText) html += '<span class="progress-dot">' + progText + '</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+
+      state.categories.forEach(function(cat){
+        html += '<div class="cal-row">';
+        html += '<div class="cal-cell row-label-cell" style="background:color-mix(in srgb, '+cat.color+' 16%, var(--surface));color:'+cat.color+';">'+escapeHtml(cat.name)+'</div>';
+        week.forEach(function(d){
+          var key = keyOf(d);
+          var val = getGoal(key, cat.id);
+          html += '<div class="cal-cell goal-cell" style="background:color-mix(in srgb, '+cat.color+' 7%, var(--surface));">';
+          html += '<input class="goal-input" data-action="goal-input" data-date="'+key+'" data-cat="'+cat.id+'" value="'+escapeHtml(val)+'" placeholder="&middot;&middot;&middot;">';
+          html += '</div>';
+        });
+        html += '</div>';
+      });
+
+      html += '</div>';
+    });
+
+    return html;
+  }
+
+  /* ---------------- render: day ---------------- */
+  function renderDayView(key){
+    var parts = key.split("-").map(Number);
+    var d = new Date(parts[0], parts[1]-1, parts[2]);
+    var wd = WEEKDAYS[d.getDay()];
+    var today = new Date();
+    var html = "";
+
+    html += '<div class="day-header">';
+    html += '  <div class="day-title-wrap">';
+    var holidayName = HOLIDAYS_KR[key];
+    html += '    <div><div class="day-title mono">' + parts[0] + '.' + pad(parts[1]) + '.' + pad(parts[2]) + '</div><div class="day-sub">' + wd + '요일' + (sameDay(d,today)?' · 오늘':'') + (holidayName?(' · <span class="holiday-label">'+escapeHtml(holidayName)+'</span>'):'') + '</div></div>';
+    html += '  </div>';
+    html += '  <div class="day-nav">';
+    html += '    <button class="nav-btn" data-action="prev-day" title="전날">&#8249;</button>';
+    html += '    <button class="nav-btn" data-action="next-day" title="다음날">&#8250;</button>';
+    html += '  </div>';
+    html += '</div>';
+
+    html += '<div class="day-grid">';
+    html += '<div class="day-main">';
+
+    // goals + achieved
+    var prog = goalProgress(key);
+    var monthGoalStats = computeMonthGoalStats(parts[0], parts[1]-1);
+    var monthPct = monthGoalStats.totalFilled ? Math.round(monthGoalStats.totalAchieved/monthGoalStats.totalFilled*100) : 0;
+    html += '<div class="card"><h2>월간 목표 · 오늘의 실적<span class="count">' + prog.done + ' / ' + prog.filled + '</span></h2>';
+    html += '<div class="month-rate">이번 달 달성률 <strong class="mono">'+monthPct+'%</strong><span class="month-rate-sub mono">('+monthGoalStats.totalAchieved+'/'+monthGoalStats.totalFilled+')</span></div>';
+    state.categories.forEach(function(cat){
+      var val = getGoal(key, cat.id);
+      var achieved = getAchieved(key, cat.id);
+      html += '<div class="goal-check-row">';
+      html += '  <span class="goal-cat-label" style="background:color-mix(in srgb, '+cat.color+' 20%, var(--surface));color:'+cat.color+';">'+escapeHtml(cat.name)+'</span>';
+      html += '  <input class="goal-text-input" data-action="goal-input" data-date="'+key+'" data-cat="'+cat.id+'" value="'+escapeHtml(val)+'" placeholder="이 날의 목표를 입력">';
+      html += '  <input type="checkbox" class="achieve-check" data-action="achieve-toggle" data-date="'+key+'" data-cat="'+cat.id+'" ' + (achieved?"checked":"") + (val? "" : " disabled") + '>';
+      html += '</div>';
+    });
+    if(!state.categories.length) html += '<div class="empty-hint">설정에서 카테고리를 추가해보세요.</div>';
+    html += '</div>';
+
+    // todos
+    html += '<div class="card"><h2>할일 목록</h2><div class="todo-groups">';
+    html += renderTodoGroup(key, "ei", "중요 + 긴급");
+    html += renderTodoGroup(key, "i", "중요");
+    html += renderTodoGroup(key, "u", "긴급");
+    html += '</div></div>';
+
+    // routines
+    html += '<div class="card"><h2>매일 루틴</h2>';
+    state.templates.forEach(function(t){
+      var checked = getRoutineCheck(key, t.id);
+      html += '<div class="routine-item' + (checked?" done":"") + '">';
+      html += '  <input type="checkbox" data-action="routine-toggle" data-date="'+key+'" data-tpl="'+t.id+'" ' + (checked?"checked":"") + '>';
+      html += '  <span class="rt-label">' + escapeHtml(t.name) + '</span>';
+      html += '  <button class="del-btn" data-action="routine-tpl-del" data-tpl="'+t.id+'" title="루틴 템플릿 삭제">&times;</button>';
+      html += '</div>';
+    });
+    getExtraRoutines(key).forEach(function(r){
+      html += '<div class="routine-item' + (r.done?" done":"") + '">';
+      html += '  <input type="checkbox" data-action="extra-routine-toggle" data-date="'+key+'" data-id="'+r.id+'" ' + (r.done?"checked":"") + '>';
+      html += '  <input type="text" data-action="extra-routine-text" data-date="'+key+'" data-id="'+r.id+'" value="'+escapeHtml(r.text)+'" placeholder="오늘만의 루틴">';
+      html += '  <button class="del-btn" data-action="extra-routine-del" data-date="'+key+'" data-id="'+r.id+'">&times;</button>';
+      html += '</div>';
+    });
+    html += '  <div class="todo-add"><input type="text" data-action="extra-routine-new" data-date="'+key+'" placeholder="오늘만 추가할 루틴 입력 후 Enter"><button data-action="extra-routine-add" data-date="'+key+'">추가</button></div>';
+    html += '</div>';
+
+    // summary
+    html += '<div class="card"><h2>한줄 요약</h2>';
+    html += '<textarea class="summary-input" data-action="summary-input" data-date="'+key+'" placeholder="오늘 하루를 한 줄로 정리해보세요">' + escapeHtml(getSummary(key)) + '</textarea>';
+    html += '</div>';
+
+    html += '</div>'; // day-main
+
+    // hourly
+    html += '<div class="day-side"><div class="card hour-table">';
+    html += '<h2>시간 계획표</h2>';
+    HOURS.forEach(function(h){
+      var actId = getHourly(key, h);
+      var color = colorForActivity(actId);
+      html += '<div class="hour-row">';
+      html += '  <span class="hour-label">' + h + ':00</span>';
+      html += '  <select class="hour-select" style="border-left-color:'+color+';" data-action="hour-select" data-date="'+key+'" data-hour="'+h+'">';
+      html += '    <option value=""' + (!actId?' selected':'') + '>&ndash;</option>';
+      state.timeCategories.forEach(function(tc){
+        if(!tc.activities.length) return;
+        html += '<optgroup label="'+escapeHtml(tc.name)+'">';
+        tc.activities.forEach(function(act){
+          html += '<option value="'+act.id+'"'+(actId===act.id?' selected':'')+'>'+escapeHtml(act.name)+'</option>';
+        });
+        html += '</optgroup>';
+      });
+      html += '  </select>';
+      html += '</div>';
+    });
+    html += '<div class="legend">';
+    state.timeCategories.forEach(function(tc){
+      html += '<span><i style="background:'+tc.color+'"></i>'+escapeHtml(tc.name)+'</span>';
+    });
+    html += '</div>';
+    html += '</div></div>';
+
+    html += '</div>'; // day-grid
+    return html;
+  }
+
+  function renderTodoGroup(key, group, label){
+    var items = getTodos(key, group);
+    var html = '<div class="todo-group" data-group="'+group+'">';
+    html += '<div class="todo-group-title">' + label + '</div>';
+    items.forEach(function(it){
+      html += '<div class="todo-item' + (it.done?" done":"") + '">';
+      html += '  <input type="checkbox" data-action="todo-toggle" data-date="'+key+'" data-group="'+group+'" data-id="'+it.id+'" ' + (it.done?"checked":"") + '>';
+      html += '  <input type="text" data-action="todo-text" data-date="'+key+'" data-group="'+group+'" data-id="'+it.id+'" value="'+escapeHtml(it.text)+'">';
+      html += '  <button class="del-btn" data-action="todo-del" data-date="'+key+'" data-group="'+group+'" data-id="'+it.id+'">&times;</button>';
+      html += '</div>';
+    });
+    html += '<div class="todo-add"><input type="text" data-action="todo-new" data-date="'+key+'" data-group="'+group+'" placeholder="할 일 입력 후 Enter"><button data-action="todo-add" data-date="'+key+'" data-group="'+group+'">추가</button></div>';
+    html += '</div>';
+    return html;
+  }
+
+  /* ---------------- render: stats ---------------- */
+  function renderStatsView(){
+    var goalStats = computeMonthGoalStats(state.year, state.month);
+    var overallPct = goalStats.totalFilled ? Math.round(goalStats.totalAchieved/goalStats.totalFilled*100) : 0;
+    var goalHtml = '<div class="card">';
+    goalHtml += '<h2>이번 달 목표 달성률<span class="count">' + overallPct + '% (' + goalStats.totalAchieved + '/' + goalStats.totalFilled + ')</span></h2>';
+    if(goalStats.totalFilled === 0){
+      goalHtml += '<div class="empty-hint">아직 이 달에 채운 목표가 없어요. 월간 화면이나 일간 화면에서 목표를 적어보세요.</div>';
+    } else {
+      goalHtml += '<div class="stats-list">';
+      state.categories.forEach(function(cat){
+        var s = goalStats.byCat[cat.id] || {filled:0, achieved:0};
+        var pct = s.filled ? Math.round(s.achieved/s.filled*100) : 0;
+        goalHtml += '<div class="stats-row">';
+        goalHtml += '  <div class="stats-row-top"><span class="stats-name" style="color:'+cat.color+';">'+escapeHtml(cat.name)+'</span><span class="stats-hours mono">'+pct+'% ('+s.achieved+'/'+s.filled+')</span></div>';
+        goalHtml += '  <div class="stats-track"><div class="stats-fill" style="width:'+pct+'%;background:'+cat.color+';"></div></div>';
+        goalHtml += '</div>';
+      });
+      goalHtml += '</div>';
+    }
+    goalHtml += '</div>';
+
+    var stats = computeMonthStats(state.year, state.month);
+    var rows = state.timeCategories.map(function(cat){
+      return {cat:cat, hours: stats.totals[cat.id]||0, byAct: stats.activityTotals[cat.id]||{}};
+    });
+    var totalHours = rows.reduce(function(s,r){ return s+r.hours; }, 0);
+    rows.sort(function(a,b){ return b.hours - a.hours; });
+    var maxHours = rows.length ? Math.max.apply(null, rows.map(function(r){ return r.hours; })) : 0;
+
+    var html = goalHtml;
+    html += '<div class="card">';
+    html += '<h2>이번 달 시간 투자 통계<span class="count">총 ' + totalHours + '시간 기록</span></h2>';
+    if(totalHours === 0){
+      html += '<div class="empty-hint">아직 이 달에 기록된 시간 계획표가 없어요. 일간 화면에서 시간 계획표를 채워보면 여기에 카테고리별 통계가 쌓입니다.</div>';
+    } else {
+      html += '<div class="stats-list">';
+      rows.forEach(function(r){
+        var pct = maxHours>0 ? Math.round(r.hours/maxHours*100) : 0;
+        var actEntries = Object.keys(r.byAct).map(function(aid){
+          var found = findActivity(aid);
+          return {name: found ? found.activity.name : aid, hours: r.byAct[aid]};
+        }).sort(function(a,b){ return b.hours - a.hours; });
+
+        html += '<div class="stats-row">';
+        html += '  <div class="stats-row-top"><span class="stats-name" style="color:'+r.cat.color+';">'+escapeHtml(r.cat.name)+'</span><span class="stats-hours mono">'+r.hours+'시간</span></div>';
+        html += '  <div class="stats-track"><div class="stats-fill" style="width:'+pct+'%;background:'+r.cat.color+';"></div></div>';
+        if(actEntries.length){
+          html += '  <details class="stats-detail"><summary>세부 활동 ' + actEntries.length + '개</summary>';
+          actEntries.forEach(function(a){
+            html += '<div class="stats-activity-line"><span>'+escapeHtml(a.name)+'</span><span class="mono">'+a.hours+'시간</span></div>';
+          });
+          html += '</details>';
+        }
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  /* ---------------- render: buy criteria ---------------- */
+  function formatMoney(n){
+    return Math.round(n).toLocaleString('ko-KR') + '원';
+  }
+
+  function buyField(buyId, key, label, value, placeholder){
+    var v = (value===null || value===undefined) ? '' : String(value);
+    return '<label class="buy-field"><span>'+label+'</span><input type="number" step="any" data-action="buy-field" data-buy="'+buyId+'" data-key="'+key+'" value="'+escapeHtml(v)+'" placeholder="'+placeholder+'"></label>';
+  }
+
+  function renderBuyView(){
+    var html = '<div class="buy-intro">멍거의 두 질문 — <strong>① 10년 뒤에도 더 벌 수밖에 없는 이유가 있는가?</strong> <strong>② 지금 주가가 명백히 싼가?</strong> — 을 기준으로 매수 판단을 도와줘요. <strong>종목명·현재가·PER·PBR</strong>만 입력하면 내재가치와 ROE(=PBR÷PER×100, 계산식으로 정확히 나오는 값)까지 자동으로 채워져요. 영업이익률·부채비율·유동비율은 손익계산서·재무상태표에만 있는 별도 수치라 계산으로 만들어낼 수 없어 증권 앱에서 그대로 옮겨 적어야 해요 — 다 채우면 맨 아래 ⑤에서 5단계 최종 매수 적합도로 요약해드려요.</div>';
+    if(!state.buyChecklists.length){
+      html += '<div class="card"><div class="empty-hint">아직 추적 중인 종목이 없어요. 아래 버튼으로 종목을 추가해보세요.</div></div>';
+    } else {
+      state.buyChecklists.forEach(function(item){
+        html += renderBuyCard(item);
+      });
+    }
+    html += '<button class="add-row-btn buy-add-btn" data-action="buy-add">+ 종목 추가</button>';
+    return html;
+  }
+
+  function renderRoeBox(item){
+    var roeVal = computeROE(item);
+    var filled = roeVal != null;
+    var pass = filled && ROE_METRIC.good(roeVal);
+    var html = '<div class="fin-roe'+(filled?(pass?' pass':' fail'):'')+'">';
+    html += '  <span class="fin-roe-label">'+escapeHtml(ROE_METRIC.label)+(filled?('<i class="fin-badge">'+(pass?'&#10003;':'&#10005;')+'</i>'):'')+'</span>';
+    html += '  <span class="fin-roe-value mono">'+(filled ? roeVal.toFixed(1)+'%' : 'PER·PBR을 먼저 입력하세요')+'</span>';
+    html += '  <span class="fin-field-hint">'+escapeHtml(ROE_METRIC.hint)+'</span>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderBuyCard(item){
+    var d = computeBuyDerived(item);
+    var html = '<div class="card buy-card" data-buy-id="'+item.id+'">';
+
+    html += '  <div class="buy-verdict buy-verdict-'+d.verdict.level+'"><span class="buy-verdict-label">'+escapeHtml(d.verdict.label)+'</span><span class="buy-verdict-detail">'+escapeHtml(d.verdict.detail)+'</span></div>';
+
+    html += '  <div class="buy-head">';
+    html += '    <input type="text" class="buy-name-input" data-action="buy-name" data-buy="'+item.id+'" value="'+escapeHtml(item.name)+'" placeholder="종목명 입력 (예: OOO전자)">';
+    html += '    <button class="del-btn" data-action="buy-del" title="종목 삭제">&times;</button>';
+    html += '  </div>';
+
+    html += '  <div class="buy-section">';
+    html += '    <div class="buy-section-title">① 내재가치 추정 (그레이엄 공식)</div>';
+    html += '    <div class="buy-field-grid">';
+    html += buyField(item.id, 'currentPrice', '현재 주가 (원)', item.currentPrice, '증권앱 첫 화면');
+    html += buyField(item.id, 'per', 'PER (주가수익비율)', item.per, '증권앱 첫 화면');
+    html += buyField(item.id, 'pbr', 'PBR (주가순자산비율)', item.pbr, '증권앱 첫 화면');
+    html += '    </div>';
+    html += '    <div class="buy-result">추정 내재가치 (주당) <strong class="buy-iv-result mono">'+(d.iv!=null? formatMoney(d.iv):'—')+'</strong></div>';
+    html += '    <div class="buy-caution"'+(d.perInvalid?'':' style="display:none;"')+'>'+(d.perInvalid ? '적자(PER 0 이하)이거나 PER 정보가 없으면 이 공식은 적용하기 어려워요 — 이런 기업은 대부분 "너무 어렵다"에 해당해요.' : '')+'</div>';
+    html += '  </div>';
+
+    html += '  <div class="buy-section">';
+    html += '    <div class="buy-section-title">② 재무 건전성 (버핏·멍거식 정량 지표) <span class="buy-score mono">'+d.fin.checked+'/'+d.fin.total+'</span></div>';
+    html += renderRoeBox(item);
+    html += '    <div class="fin-grid">';
+    FIN_METRICS.forEach(function(m){
+      var raw = (item.financials||{})[m.key];
+      var v = parseFloat(raw);
+      var filled = raw!=="" && raw!=null && !isNaN(v);
+      var pass = filled && m.good(v);
+      html += '<label class="fin-field'+(filled?(pass?' pass':' fail'):'')+'">';
+      html += '  <span class="fin-field-label">'+escapeHtml(m.label)+(filled?('<i class="fin-badge">'+(pass?'&#10003;':'&#10005;')+'</i>'):'')+'</span>';
+      html += '  <input type="number" step="any" data-action="buy-fin" data-buy="'+item.id+'" data-key="'+m.key+'" value="'+escapeHtml(raw==null?'':String(raw))+'" placeholder="증권앱 재무비율 탭">';
+      html += '  <span class="fin-field-hint">'+escapeHtml(m.hint)+'</span>';
+      html += '</label>';
+    });
+    html += '    </div>';
+    html += '    <div class="fin-ref-row"><label class="fin-field">';
+    html += '  <span class="fin-field-label">'+escapeHtml(FIN_REF_METRIC.label)+'</span>';
+    html += '  <input type="number" step="any" data-action="buy-fin" data-buy="'+item.id+'" data-key="'+FIN_REF_METRIC.key+'" value="'+escapeHtml((item.financials||{})[FIN_REF_METRIC.key] || '')+'" placeholder="증권앱 재무비율 탭">';
+    html += '  <span class="fin-field-hint">'+escapeHtml(FIN_REF_METRIC.hint)+'</span>';
+    html += '</label></div>';
+    html += '    <label class="toohard-row'+(item.tooHard?' checked':'')+'"><input type="checkbox" data-action="buy-toohard" data-buy="'+item.id+'" '+(item.tooHard?'checked':'')+'><span>너무 어렵다 (Too Hard) — 사업 구조가 복잡하거나 변화가 빨라 예측하기 어려워요</span></label>';
+    html += '  </div>';
+
+    html += '  <div class="buy-section">';
+    html += '    <div class="buy-section-title">③ 안전마진 &amp; 매수가</div>';
+    html += '    <div class="buy-field-grid">';
+    html += buyField(item.id, 'safetyMargin', '요구 안전마진 (%)', item.safetyMargin, '30~50');
+    html += '    </div>';
+    html += '    <div class="buy-result">매수 목표가 <strong class="buy-target-result mono">'+(d.buyTarget!=null? formatMoney(d.buyTarget):'—')+'</strong>';
+    html += '<span class="buy-gap mono' + (d.gapPct==null?'':(' '+(d.gapPct<=0?'good':'wait'))) + '"' + (d.gapPct==null?' style="display:none;"':'') + '>' + (d.gapPct!=null ? (d.gapPct<=0 ? ('목표가보다 '+Math.abs(d.gapPct)+'% 낮음') : ('목표가까지 '+d.gapPct+'% 남음')) : '') + '</span>';
+    html += '</div>';
+    html += '  </div>';
+
+    html += '  <div class="buy-section">';
+    html += '    <div class="buy-section-title">④ 멍거의 질문 ① — 10년 뒤에도 더 벌 수밖에 없는 명확한 이유가 있는가?</div>';
+    html += '    <textarea class="buy-reason" data-action="buy-reason" data-buy="'+item.id+'" placeholder="근거를 적어보세요 (해자, 산업 구조, 대체 불가능성 등)">'+escapeHtml(item.q1Reason)+'</textarea>';
+    html += '    <div class="buy-yesno">';
+    html += '      <button class="yesno-btn'+(item.q1Answer===true?' active-yes':'')+'" data-action="buy-q1" data-buy="'+item.id+'" data-val="yes">예, 명확하다</button>';
+    html += '      <button class="yesno-btn'+(item.q1Answer===false?' active-no':'')+'" data-action="buy-q1" data-buy="'+item.id+'" data-val="no">아니오, 불확실하다</button>';
+    html += '    </div>';
+    html += '    <div class="buy-q2-note">질문 ② "지금 주가가 명백히 싼가?"는 안전마진 계산으로 자동 판단돼요 &rarr; <strong class="buy-q2-value">' + (d.buyTarget!=null && d.gapPct!=null ? (d.gapPct<=0 ? '예' : '아니오') : '입력 필요') + '</strong></div>';
+    html += '  </div>';
+
+    html += renderFinalRating(d.rating);
+
+    html += '</div>';
+    return html;
+  }
+
+  function renderFinalRating(rating){
+    var levels = [5,4,3,2,1];
+    var html = '  <div class="buy-final">';
+    html += '    <div class="buy-final-title">⑤ 최종 매수 적합도</div>';
+    html += '    <div class="buy-final-scale">';
+    levels.forEach(function(lv){
+      html += '<div class="buy-final-seg lvl-'+lv+(lv===rating.level?' active':'')+'"></div>';
+    });
+    html += '    </div>';
+    html += '    <div class="buy-final-label lvl-'+rating.level+'">'+rating.level+'단계 · '+escapeHtml(rating.label)+'</div>';
+    html += '    <div class="buy-final-desc">'+escapeHtml(rating.desc)+'</div>';
+    html += '  </div>';
+    return html;
+  }
+
+  function refreshBuyCard(id){
+    var item = findBuyItem(id);
+    if(!item) return;
+    var card = app.querySelector('.buy-card[data-buy-id="'+id+'"]');
+    if(!card) return;
+    var d = computeBuyDerived(item);
+
+    var verdictEl = card.querySelector('.buy-verdict');
+    verdictEl.className = 'buy-verdict buy-verdict-'+d.verdict.level;
+    verdictEl.innerHTML = '<span class="buy-verdict-label">'+escapeHtml(d.verdict.label)+'</span><span class="buy-verdict-detail">'+escapeHtml(d.verdict.detail)+'</span>';
+
+    var ivEl = card.querySelector('.buy-iv-result');
+    if(ivEl) ivEl.textContent = d.iv!=null ? formatMoney(d.iv) : '—';
+
+    var scoreEl = card.querySelector('.buy-score');
+    if(scoreEl) scoreEl.textContent = d.fin.checked+'/'+d.fin.total;
+
+    var roeBox = card.querySelector('.fin-roe');
+    if(roeBox) roeBox.outerHTML = renderRoeBox(item);
+
+    FIN_METRICS.forEach(function(m){
+      var input = card.querySelector('.fin-field input[data-key="'+m.key+'"]');
+      if(!input) return;
+      var raw = (item.financials||{})[m.key];
+      var v = parseFloat(raw);
+      var filled = raw!=="" && raw!=null && !isNaN(v);
+      var pass = filled && m.good(v);
+      var label = input.closest('.fin-field').querySelector('.fin-field-label');
+      input.closest('.fin-field').className = 'fin-field'+(filled?(pass?' pass':' fail'):'');
+      label.innerHTML = escapeHtml(m.label)+(filled?('<i class="fin-badge">'+(pass?'&#10003;':'&#10005;')+'</i>'):'');
+    });
+
+    var targetEl = card.querySelector('.buy-target-result');
+    if(targetEl) targetEl.textContent = d.buyTarget!=null ? formatMoney(d.buyTarget) : '—';
+
+    var gapEl = card.querySelector('.buy-gap');
+    if(gapEl){
+      if(d.gapPct!=null){
+        gapEl.style.display = '';
+        gapEl.className = 'buy-gap mono ' + (d.gapPct<=0?'good':'wait');
+        gapEl.textContent = d.gapPct<=0 ? ('목표가보다 '+Math.abs(d.gapPct)+'% 낮음') : ('목표가까지 '+d.gapPct+'% 남음');
+      } else {
+        gapEl.style.display = 'none';
+        gapEl.textContent = '';
+      }
+    }
+
+    var q2El = card.querySelector('.buy-q2-value');
+    if(q2El) q2El.textContent = (d.buyTarget!=null && d.gapPct!=null) ? (d.gapPct<=0?'예':'아니오') : '입력 필요';
+
+    var cautionEl = card.querySelector('.buy-caution');
+    if(cautionEl){
+      if(d.perInvalid){
+        cautionEl.style.display = '';
+        cautionEl.textContent = '적자(PER 0 이하)이거나 PER 정보가 없으면 이 공식은 적용하기 어려워요 — 이런 기업은 대부분 "너무 어렵다"에 해당해요.';
+      } else {
+        cautionEl.style.display = 'none';
+        cautionEl.textContent = '';
+      }
+    }
+
+    var finalEl = card.querySelector('.buy-final');
+    if(finalEl) finalEl.outerHTML = renderFinalRating(d.rating);
+  }
+
+  /* ---------------- events ---------------- */
+  var app = document.getElementById("app");
+
+  app.addEventListener("click", function(e){
+    var t = e.target.closest("[data-action]");
+    if(!t) return;
+    var action = t.getAttribute("data-action");
+
+    switch(action){
+      case "show-month": state.view="month"; save(); render(); break;
+      case "show-day": state.view="day"; save(); render(); break;
+      case "show-stats": state.view="stats"; save(); render(); break;
+      case "show-buy": state.view="buy"; save(); render(); break;
+      case "prev-month": changeMonth(-1); break;
+      case "next-month": changeMonth(1); break;
+      case "goto-today": {
+        var now = new Date();
+        state.year = now.getFullYear(); state.month = now.getMonth();
+        state.selectedDate = keyOf(now); state.view = "day";
+        save(); render();
+        break;
+      }
+      case "toggle-settings": state.settingsOpen = !state.settingsOpen; save(); render(); break;
+      case "open-day": {
+        var dt = t.getAttribute("data-date");
+        state.selectedDate = dt; state.view = "day";
+        var p = dt.split("-").map(Number);
+        state.year = p[0]; state.month = p[1]-1;
+        save(); render();
+        break;
+      }
+      case "prev-day": shiftDay(-1); break;
+      case "next-day": shiftDay(1); break;
+
+      case "cat-add": {
+        var id = uid("cat");
+        var palette = ["var(--cat-1)","var(--cat-2)","var(--cat-3)","var(--cat-4)","var(--cat-5)"];
+        state.categories.push({id:id, name:"새 카테고리", color: palette[state.categories.length % palette.length]});
+        save(); render();
+        break;
+      }
+      case "cat-del": {
+        var row = t.closest("[data-cat-id]");
+        var cid = row.getAttribute("data-cat-id");
+        state.categories = state.categories.filter(function(c){ return c.id!==cid; });
+        save(); render();
+        break;
+      }
+      case "tpl-add": {
+        state.templates.push({id:uid("rt"), name:"새 루틴"});
+        save(); render();
+        break;
+      }
+      case "tpl-del": {
+        var row2 = t.closest("[data-tpl-id]");
+        var tid = row2.getAttribute("data-tpl-id");
+        state.templates = state.templates.filter(function(x){ return x.id!==tid; });
+        save(); render();
+        break;
+      }
+      case "routine-tpl-del": {
+        var tid3 = t.getAttribute("data-tpl");
+        state.templates = state.templates.filter(function(x){ return x.id!==tid3; });
+        save(); render();
+        break;
+      }
+
+      case "tc-add": {
+        var tcPalette = ["var(--tc-1)","var(--tc-2)","var(--tc-3)","var(--tc-4)","var(--tc-5)","var(--tc-6)"];
+        state.timeCategories.push({id:uid("tc"), name:"새 카테고리", color: tcPalette[state.timeCategories.length % tcPalette.length], activities:[]});
+        save(); render();
+        break;
+      }
+      case "tc-del": {
+        var tcRowDel = t.closest("[data-tc-id]");
+        var tcidDel = tcRowDel.getAttribute("data-tc-id");
+        state.timeCategories = state.timeCategories.filter(function(c){ return c.id!==tcidDel; });
+        save(); render();
+        break;
+      }
+      case "act-add": {
+        var tcIdForAct = t.getAttribute("data-tc");
+        var tcForAct = state.timeCategories.find(function(c){ return c.id===tcIdForAct; });
+        if(tcForAct){ tcForAct.activities.push({id:uid("act"), name:"새 활동"}); save(); render(); }
+        break;
+      }
+      case "act-del": {
+        var tcIdForDel = t.getAttribute("data-tc"), actIdForDel = t.getAttribute("data-act");
+        var tcForDel = state.timeCategories.find(function(c){ return c.id===tcIdForDel; });
+        if(tcForDel){ tcForDel.activities = tcForDel.activities.filter(function(a){ return a.id!==actIdForDel; }); save(); render(); }
+        break;
+      }
+
+      case "todo-add": addTodo(t.getAttribute("data-date"), t.getAttribute("data-group")); break;
+      case "todo-del": {
+        var dte = t.getAttribute("data-date"), grp = t.getAttribute("data-group"), id2 = t.getAttribute("data-id");
+        var arr = getTodos(dte, grp).filter(function(x){ return x.id!==id2; });
+        setTodos(dte, grp, arr); render();
+        break;
+      }
+      case "extra-routine-add": addExtraRoutine(t.getAttribute("data-date")); break;
+      case "extra-routine-del": {
+        var dte2 = t.getAttribute("data-date"), id3 = t.getAttribute("data-id");
+        var arr2 = getExtraRoutines(dte2).filter(function(x){ return x.id!==id3; });
+        setExtraRoutines(dte2, arr2); render();
+        break;
+      }
+
+      case "buy-add": {
+        state.buyChecklists.push(newBuyItem());
+        save(); render();
+        break;
+      }
+      case "buy-del": {
+        var buyCardDel = t.closest(".buy-card");
+        var buyIdDel = buyCardDel.getAttribute("data-buy-id");
+        state.buyChecklists = state.buyChecklists.filter(function(x){ return x.id!==buyIdDel; });
+        save(); render();
+        break;
+      }
+      case "buy-q1": {
+        var buyIdQ1 = t.getAttribute("data-buy"), valQ1 = t.getAttribute("data-val");
+        var itemQ1 = findBuyItem(buyIdQ1);
+        if(itemQ1){
+          itemQ1.q1Answer = (valQ1==="yes") ? true : (valQ1==="no" ? false : null);
+          save();
+          var cardQ1 = t.closest(".buy-card");
+          cardQ1.querySelectorAll(".yesno-btn").forEach(function(b){ b.classList.remove("active-yes","active-no"); });
+          if(itemQ1.q1Answer===true) t.classList.add("active-yes");
+          else if(itemQ1.q1Answer===false) t.classList.add("active-no");
+          refreshBuyCard(buyIdQ1);
+        }
+        break;
+      }
+    }
+  });
+
+  app.addEventListener("change", function(e){
+    var t = e.target.closest("[data-action]");
+    if(!t) return;
+    var action = t.getAttribute("data-action");
+
+    switch(action){
+      case "cat-name": {
+        var row = t.closest("[data-cat-id]");
+        var cid = row.getAttribute("data-cat-id");
+        var cat = state.categories.find(function(c){ return c.id===cid; });
+        if(cat){ cat.name = t.value; save(); }
+        break;
+      }
+      case "cat-color": {
+        var row2 = t.closest("[data-cat-id]");
+        var cid2 = row2.getAttribute("data-cat-id");
+        var cat2 = state.categories.find(function(c){ return c.id===cid2; });
+        if(cat2){ cat2.color = t.value; save(); render(); }
+        break;
+      }
+      case "tpl-name": {
+        var row3 = t.closest("[data-tpl-id]");
+        var tid2 = row3.getAttribute("data-tpl-id");
+        var tpl = state.templates.find(function(x){ return x.id===tid2; });
+        if(tpl){ tpl.name = t.value; save(); }
+        break;
+      }
+      case "tc-name": {
+        var tcRowN = t.closest("[data-tc-id]");
+        var tcN = state.timeCategories.find(function(c){ return c.id===tcRowN.getAttribute("data-tc-id"); });
+        if(tcN){ tcN.name = t.value; save(); }
+        break;
+      }
+      case "tc-color": {
+        var tcRowC = t.closest("[data-tc-id]");
+        var tcC = state.timeCategories.find(function(c){ return c.id===tcRowC.getAttribute("data-tc-id"); });
+        if(tcC){ tcC.color = t.value; save(); render(); }
+        break;
+      }
+      case "act-name": {
+        var tcRowA = t.closest("[data-tc-id]");
+        var actRowA = t.closest("[data-act-id]");
+        var tcA = state.timeCategories.find(function(c){ return c.id===tcRowA.getAttribute("data-tc-id"); });
+        var actA = tcA && tcA.activities.find(function(a){ return a.id===actRowA.getAttribute("data-act-id"); });
+        if(actA){ actA.name = t.value; save(); }
+        break;
+      }
+      case "hour-select": {
+        var dteH = t.getAttribute("data-date"), hH = t.getAttribute("data-hour");
+        setHourly(dteH, hH, t.value);
+        t.style.borderLeftColor = colorForActivity(t.value);
+        break;
+      }
+      case "achieve-toggle": setAchieved(t.getAttribute("data-date"), t.getAttribute("data-cat"), t.checked); refreshCounts(); break;
+      case "routine-toggle": {
+        setRoutineCheck(t.getAttribute("data-date"), t.getAttribute("data-tpl"), t.checked);
+        t.closest(".routine-item").classList.toggle("done", t.checked);
+        break;
+      }
+      case "extra-routine-toggle": {
+        var dte3 = t.getAttribute("data-date"), id4 = t.getAttribute("data-id");
+        var arr3 = getExtraRoutines(dte3);
+        var item = arr3.find(function(x){ return x.id===id4; });
+        if(item){ item.done = t.checked; setExtraRoutines(dte3, arr3); t.closest(".routine-item").classList.toggle("done", t.checked); }
+        break;
+      }
+      case "todo-toggle": {
+        var dte4=t.getAttribute("data-date"), grp2=t.getAttribute("data-group"), id5=t.getAttribute("data-id");
+        var arr4 = getTodos(dte4, grp2);
+        var it = arr4.find(function(x){ return x.id===id5; });
+        if(it){ it.done = t.checked; setTodos(dte4, grp2, arr4); t.closest(".todo-item").classList.toggle("done", t.checked); }
+        break;
+      }
+      case "buy-toohard": {
+        var itemHard = findBuyItem(t.getAttribute("data-buy"));
+        if(itemHard){
+          itemHard.tooHard = t.checked;
+          save();
+          t.closest(".toohard-row").classList.toggle("checked", t.checked);
+          refreshBuyCard(itemHard.id);
+        }
+        break;
+      }
+    }
+  });
+
+  app.addEventListener("input", function(e){
+    var t = e.target.closest("[data-action]");
+    if(!t) return;
+    var action = t.getAttribute("data-action");
+    switch(action){
+      case "goal-input": {
+        setGoal(t.getAttribute("data-date"), t.getAttribute("data-cat"), t.value);
+        refreshCounts();
+        break;
+      }
+      case "todo-text": {
+        var dte=t.getAttribute("data-date"), grp=t.getAttribute("data-group"), id=t.getAttribute("data-id");
+        var arr = getTodos(dte, grp);
+        var it = arr.find(function(x){ return x.id===id; });
+        if(it){ it.text = t.value; setTodos(dte, grp, arr); }
+        break;
+      }
+      case "extra-routine-text": {
+        var dte2=t.getAttribute("data-date"), id2=t.getAttribute("data-id");
+        var arr2 = getExtraRoutines(dte2);
+        var item = arr2.find(function(x){ return x.id===id2; });
+        if(item){ item.text = t.value; setExtraRoutines(dte2, arr2); }
+        break;
+      }
+      case "summary-input": setSummary(t.getAttribute("data-date"), t.value); break;
+      case "buy-name": {
+        var itemName = findBuyItem(t.getAttribute("data-buy"));
+        if(itemName){ itemName.name = t.value; save(); }
+        break;
+      }
+      case "buy-field": {
+        var itemField = findBuyItem(t.getAttribute("data-buy"));
+        var key = t.getAttribute("data-key");
+        if(itemField){ itemField[key] = t.value; save(); refreshBuyCard(itemField.id); }
+        break;
+      }
+      case "buy-fin": {
+        var itemFin = findBuyItem(t.getAttribute("data-buy"));
+        var finKey = t.getAttribute("data-key");
+        if(itemFin){
+          if(!itemFin.financials) itemFin.financials = {};
+          itemFin.financials[finKey] = t.value;
+          save();
+          refreshBuyCard(itemFin.id);
+        }
+        break;
+      }
+      case "buy-reason": {
+        var itemReason = findBuyItem(t.getAttribute("data-buy"));
+        if(itemReason){ itemReason.q1Reason = t.value; save(); }
+        break;
+      }
+    }
+  });
+
+  app.addEventListener("keydown", function(e){
+    if(e.key !== "Enter") return;
+    var t = e.target;
+    if(t.getAttribute("data-action")==="todo-new"){
+      e.preventDefault();
+      addTodo(t.getAttribute("data-date"), t.getAttribute("data-group"));
+    } else if(t.getAttribute("data-action")==="extra-routine-new"){
+      e.preventDefault();
+      addExtraRoutine(t.getAttribute("data-date"));
+    }
+  });
+
+  function addTodo(dateStr, group){
+    var input = app.querySelector('[data-action="todo-new"][data-date="'+dateStr+'"][data-group="'+group+'"]');
+    var text = input ? input.value.trim() : "";
+    if(!text) return;
+    var arr = getTodos(dateStr, group);
+    arr.push({id:uid("td"), text:text, done:false});
+    setTodos(dateStr, group, arr);
+    render();
+    var newInput = app.querySelector('[data-action="todo-new"][data-date="'+dateStr+'"][data-group="'+group+'"]');
+    if(newInput) newInput.focus();
+  }
+
+  function addExtraRoutine(dateStr){
+    var input = app.querySelector('[data-action="extra-routine-new"][data-date="'+dateStr+'"]');
+    var text = input ? input.value.trim() : "";
+    if(!text) return;
+    var arr = getExtraRoutines(dateStr);
+    arr.push({id:uid("er"), text:text, done:false});
+    setExtraRoutines(dateStr, arr);
+    render();
+  }
+
+  function refreshCounts(){
+    var h2 = app.querySelector(".card h2 .count");
+    if(h2){
+      var prog = goalProgress(state.selectedDate);
+      h2.textContent = prog.done + " / " + prog.filled;
+    }
+    var rateEl = app.querySelector(".month-rate");
+    if(rateEl){
+      var parts = state.selectedDate.split("-").map(Number);
+      var monthGoalStats = computeMonthGoalStats(parts[0], parts[1]-1);
+      var monthPct = monthGoalStats.totalFilled ? Math.round(monthGoalStats.totalAchieved/monthGoalStats.totalFilled*100) : 0;
+      rateEl.innerHTML = '이번 달 달성률 <strong class="mono">'+monthPct+'%</strong><span class="month-rate-sub mono">('+monthGoalStats.totalAchieved+'/'+monthGoalStats.totalFilled+')</span>';
+    }
+    var summaryEl = app.querySelector(".month-summary");
+    if(summaryEl){
+      var ms = computeMonthGoalStats(state.year, state.month);
+      var msPct = ms.totalFilled ? Math.round(ms.totalAchieved/ms.totalFilled*100) : 0;
+      summaryEl.querySelector(".month-summary-pct").textContent = msPct + "%";
+      summaryEl.querySelector(".month-summary-fill").style.width = msPct + "%";
+      summaryEl.querySelector(".month-summary-count").textContent = ms.totalAchieved + " / " + ms.totalFilled + " 완료";
+    }
+  }
+
+  function changeMonth(delta){
+    var m = state.month + delta;
+    var y = state.year;
+    if(m<0){ m=11; y--; } else if(m>11){ m=0; y++; }
+    state.month = m; state.year = y;
+    save(); render();
+  }
+
+  function shiftDay(delta){
+    var p = state.selectedDate.split("-").map(Number);
+    var d = new Date(p[0], p[1]-1, p[2]);
+    d.setDate(d.getDate()+delta);
+    state.selectedDate = keyOf(d);
+    state.year = d.getFullYear(); state.month = d.getMonth();
+    save(); render();
+  }
+
+  render();
+  initCloudSync();
+})();
+</script>
+
+
+</body></html>
