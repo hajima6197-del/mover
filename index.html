@@ -93,7 +93,7 @@
   }
 
   /* ---- top nav ---- */
-  .tabs-wide{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;background:var(--surface-2);padding:5px;border-radius:13px;border:1px solid var(--border-soft);margin-bottom:16px;box-shadow:var(--shadow);}
+  .tabs-wide{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;background:var(--surface-2);padding:5px;border-radius:13px;border:1px solid var(--border-soft);margin-bottom:16px;box-shadow:var(--shadow);}
   .tab-wide-btn{border:none;background:transparent;padding:13px 14px;border-radius:9px;font-size:15px;font-weight:600;color:var(--ink-muted);font-family:'Gowun Batang',serif;letter-spacing:0.02em;}
   .tab-wide-btn:hover{color:var(--ink);}
   .tab-wide-btn.active{background:var(--surface);color:var(--accent);box-shadow:var(--shadow);}
@@ -336,6 +336,29 @@
   .buy-final-desc{font-size:12.5px;color:var(--ink-muted);line-height:1.5;}
 
   .toolbar-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  @media (max-width:640px){
+    .tabs-wide{gap:3px;padding:4px;}
+    .tab-wide-btn{padding:11px 2px;font-size:12.5px;letter-spacing:0;}
+  }
+
+  .quote-wrap{max-width:720px;margin:0 auto;}
+  .quote-card{position:relative;padding:34px 30px 22px;margin-bottom:14px;}
+  .quote-card::before{content:"“";position:absolute;top:-14px;left:16px;font-family:'Gowun Batang',serif;font-size:96px;line-height:1;color:var(--accent);opacity:.18;pointer-events:none;}
+  .quote-kicker{position:relative;font-size:12px;font-weight:600;color:var(--accent);letter-spacing:.03em;margin-bottom:16px;}
+  .quote-ko{position:relative;margin:0 0 14px;font-family:'Gowun Batang',serif;font-size:23px;line-height:1.7;font-weight:700;text-wrap:balance;}
+  .quote-en{margin:0 0 20px;font-size:13.5px;line-height:1.7;color:var(--ink-muted);font-style:italic;}
+  .quote-who{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+  .quote-name{font-weight:700;font-size:15px;}
+  .quote-role{font-size:12px;color:var(--ink-faint);}
+  .quote-src{border-top:1px solid var(--border-soft);padding-top:13px;display:grid;gap:3px;font-size:12.5px;color:var(--ink-muted);line-height:1.55;}
+  .quote-src-title{color:var(--ink);font-weight:600;}
+  .quote-src a{color:var(--accent);text-decoration:none;font-weight:600;}
+  .quote-src a:hover{text-decoration:underline;}
+  .quote-verified{font-size:11.5px;color:var(--success);}
+  .quote-nav{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+  .quote-count{text-align:center;font-size:11.5px;color:var(--ink-faint);margin-top:10px;}
+  .quote-note{text-align:center;font-size:11.5px;color:var(--ink-faint);margin-top:6px;line-height:1.6;}
+  @media (max-width:640px){ .quote-card{padding:30px 20px 18px;} .quote-ko{font-size:20px;} }
 
   .btc-snap{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 18px;background:var(--surface-2);border-bottom:1px solid var(--border-soft);}
   .btc-snap-main{display:flex;flex-direction:column;gap:2px;}
@@ -1147,6 +1170,126 @@
     return {level:3, label:"관찰 · 대기", desc:"저평가 신호가 " + c.good + "개뿐이에요 (과열 " + c.hot + "개). 확실한 기회가 올 때까지 기다리는 구간이에요."};
   }
 
+  /* ---------------- 오늘의 명언 ---------------- */
+  // 여기 담긴 문장은 전부 원문과 한 글자씩 대조해서 확인된 것만이에요.
+  //  - 버핏: 버크셔 해서웨이 공식 사이트(berkshirehathaway.com/letters)의 주주서한 본문
+  //  - 멍거: 공개된 연설 전사본 (녹취 원본이 아니라 글로 옮긴 판본이라 단어가 판본마다 조금 다를 수 있어요)
+  // 한국어는 직역에 가깝게 옮긴 번역이고, 기준은 영어 원문이에요. 출처를 못 찾은 유명 문장은 일부러 뺐어요.
+  var BH = "https://www.berkshirehathaway.com/letters/";
+  var MUNGER_1994 = {meta:"1994년 4월 14일 USC 경영대학원 연설 ‘A Lesson on Elementary, Worldly Wisdom’", url:"https://jamesclear.com/great-speeches/a-lesson-on-elementary-worldly-wisdom-by-charlie-munger"};
+  var MUNGER_1995 = {meta:"1995년 6월경 하버드대학교 연설 ‘The Psychology of Human Misjudgment’ (전사본상 추정 일자)", url:"https://buffettmungerwisdom.wordpress.com/wp-content/uploads/2013/01/mungerspeech_june_95.pdf"};
+  var MUNGER_2007 = {meta:"2007년 5월 13일 USC 로스쿨 졸업식 축사", url:"https://jamesclear.com/great-speeches/2007-usc-law-school-commencement-address-by-charlie-munger"};
+  var V_BH = "버크셔 공식 사이트의 서한 본문과 대조했어요";
+  var V_MG = "공개된 연설 전사본과 대조했어요 (녹취 원본 아님)";
+
+  var QUOTES = [
+    {who:"워런 버핏", whoEn:"Warren Buffett",
+     en:"Our goal is more modest: we simply attempt to be fearful when others are greedy and to be greedy only when others are fearful.",
+     ko:"우리의 목표는 소박합니다. 다른 사람들이 탐욕스러울 때 두려워하고, 다른 사람들이 두려워할 때에만 탐욕스러워지려고 노력할 뿐입니다.",
+     title:"버크셔 해서웨이 1986년도 주주서한", meta:"Chairman’s Letter, 1986", ctx:"시장에 탐욕과 두려움이 번지는 시기를 맞히려 하지 않는다고 설명하며", url:BH+"1986.html", verified:V_BH},
+    {who:"찰리 멍거", whoEn:"Charlie Munger",
+     en:"You’ve got to have models in your head. And you’ve got to array your experience—both vicarious and direct—on this latticework of models.",
+     ko:"머릿속에 모델들이 있어야 합니다. 그리고 간접 경험이든 직접 경험이든, 모든 경험을 그 모델들의 격자 위에 배열해야 합니다.",
+     title:"A Lesson on Elementary, Worldly Wisdom", meta:MUNGER_1994.meta, ctx:"여러 학문의 핵심 모델을 익혀야 하는 이유를 설명하며", url:MUNGER_1994.url, verified:V_MG},
+    {who:"워런 버핏", whoEn:"Warren Buffett",
+     en:"Mr. Market is there to serve you, not to guide you. It is his pocketbook, not his wisdom, that you will find useful.",
+     ko:"미스터 마켓은 당신을 위해 일하는 존재이지, 당신을 이끄는 존재가 아닙니다. 당신에게 쓸모 있는 것은 그의 지갑이지 그의 지혜가 아닙니다.",
+     title:"버크셔 해서웨이 1987년도 주주서한", meta:"Chairman’s Letter, 1987", ctx:"스승 그레이엄이 만든 ‘미스터 마켓’ 비유를 설명하며", url:BH+"1987.html", verified:V_BH},
+    {who:"찰리 멍거", whoEn:"Charlie Munger",
+     en:"The wise ones bet heavily when the world offers them that opportunity. They bet big when they have the odds. And the rest of the time, they don’t. It’s just that simple.",
+     ko:"현명한 사람들은 세상이 기회를 줄 때 크게 겁니다. 승산이 있을 때 크게 걸고, 그 밖의 시간에는 걸지 않습니다. 그저 그만큼 단순합니다.",
+     title:"A Lesson on Elementary, Worldly Wisdom", meta:MUNGER_1994.meta, ctx:"가격이 잘못 매겨진 기회를 드물게 찾는 사람들에 대해 말하며", url:MUNGER_1994.url, verified:V_MG},
+    {who:"워런 버핏", whoEn:"Warren Buffett",
+     en:"In fact, when we own portions of outstanding businesses with outstanding managements, our favorite holding period is forever.",
+     ko:"사실 우리가 훌륭한 경영진이 이끄는 훌륭한 기업의 지분을 보유할 때, 우리가 가장 좋아하는 보유 기간은 ‘영원’입니다.",
+     title:"버크셔 해서웨이 1988년도 주주서한", meta:"Chairman’s Letter, 1988", ctx:"보유 종목을 오래 들고 가는 철학을 설명하며", url:BH+"1988.html", verified:V_BH},
+    {who:"찰리 멍거", whoEn:"Charlie Munger",
+     en:"You have to figure out where you’ve got an edge. And you’ve got to play within your own circle of competence.",
+     ko:"어디에 자신의 우위가 있는지 알아내야 합니다. 그리고 자신의 능력범위 안에서 싸워야 합니다.",
+     title:"A Lesson on Elementary, Worldly Wisdom", meta:MUNGER_1994.meta, ctx:"능력범위(circle of competence)를 설명하며", url:MUNGER_1994.url, verified:V_MG},
+    {who:"워런 버핏", whoEn:"Warren Buffett",
+     en:"It’s far better to buy a wonderful company at a fair price than a fair company at a wonderful price.",
+     ko:"그저 그런 기업을 훌륭한 가격에 사는 것보다, 훌륭한 기업을 적정한 가격에 사는 편이 훨씬 낫습니다.",
+     title:"버크셔 해서웨이 1989년도 주주서한", meta:"Chairman’s Letter, 1989", ctx:"싼 가격만 좇던 과거를 돌아보며 (‘멍거는 일찍 깨달았고 나는 느린 학생이었다’는 대목)", url:BH+"1989.html", verified:V_BH},
+    {who:"찰리 멍거", whoEn:"Charlie Munger",
+     en:"Nothing is automatic and easy. But if you can find some fairly-priced great company and buy it and sit, that tends to work out very, very well indeed…",
+     ko:"자동으로 쉬운 것은 없습니다. 하지만 적정한 가격의 훌륭한 기업을 찾아 사서 그저 앉아 있으면, 대체로 아주 아주 잘 풀립니다…",
+     title:"A Lesson on Elementary, Worldly Wisdom (발췌)", meta:MUNGER_1994.meta, ctx:"투자의 위험과 현실적인 접근을 정리하며", url:MUNGER_1994.url, verified:V_MG},
+    {who:"워런 버핏", whoEn:"Warren Buffett",
+     en:"Time is the friend of the wonderful business, the enemy of the mediocre.",
+     ko:"시간은 훌륭한 사업에게는 친구이고, 평범한 사업에게는 적입니다.",
+     title:"버크셔 해서웨이 1989년도 주주서한", meta:"Chairman’s Letter, 1989", ctx:"싸다는 이유로 평범한 사업을 사는 접근이 왜 어리석은지 설명하며", url:BH+"1989.html", verified:V_BH},
+    {who:"찰리 멍거", whoEn:"Charlie Munger",
+     en:"I think I’ve been in the top 5% of my age cohort all my life in understanding the power of incentives, and all my life I’ve underestimated it.",
+     ko:"저는 평생 동년배 가운데 인센티브의 힘을 이해하는 데 상위 5% 안에 든다고 생각해 왔습니다. 그런데도 평생 그 힘을 과소평가해 왔습니다.",
+     title:"The Psychology of Human Misjudgment", meta:MUNGER_1995.meta, ctx:"인센티브가 사람의 판단을 얼마나 휘어 놓는지 설명하며", url:MUNGER_1995.url, verified:V_MG},
+    {who:"워런 버핏", whoEn:"Warren Buffett",
+     en:"Lethargy bordering on sloth remains the cornerstone of our investment style: This year we neither bought nor sold a share of five of our six major holdings.",
+     ko:"나태에 가까운 느긋함이 우리 투자 스타일의 초석으로 남아 있습니다. 올해 우리는 여섯 개 대형 보유 종목 가운데 다섯 개를 단 한 주도 사지도 팔지도 않았습니다.",
+     title:"버크셔 해서웨이 1990년도 주주서한", meta:"Chairman’s Letter, 1990", ctx:"주요 보유 종목 변동 내역을 보고하며", url:BH+"1990.html", verified:V_BH},
+    {who:"찰리 멍거", whoEn:"Charlie Munger",
+     en:"To the man with a hammer, every problem tends to look pretty much like a nail.",
+     ko:"망치를 든 사람에게는 모든 문제가 거의 못처럼 보이기 마련입니다.",
+     title:"The Psychology of Human Misjudgment", meta:MUNGER_1995.meta, ctx:"자기 전문 분야의 도구에 갇힌 사람들을 예로 들며", url:MUNGER_1995.url, verified:V_MG},
+    {who:"워런 버핏", whoEn:"Warren Buffett",
+     en:"You only have to be able to evaluate companies within your circle of competence. The size of that circle is not very important; knowing its boundaries, however, is vital.",
+     ko:"당신은 자신의 능력범위 안에 있는 기업만 평가할 수 있으면 됩니다. 그 원의 크기는 별로 중요하지 않습니다. 하지만 그 경계를 아는 것은 필수입니다.",
+     title:"버크셔 해서웨이 1996년도 주주서한", meta:"Chairman’s Letter, 1996", ctx:"투자자에게 정말 필요한 능력이 무엇인지 설명하며", url:BH+"1996.html", verified:V_BH},
+    {who:"찰리 멍거", whoEn:"Charlie Munger",
+     en:"They go to bed every night a little wiser than when they got up and boy does that help—particularly when you have a long run ahead of you.",
+     ko:"그들은 매일 밤 아침보다 조금 더 현명해져서 잠자리에 듭니다. 그리고 앞날이 길 때는 그게 정말 큰 도움이 됩니다.",
+     title:"2007 USC Law School Commencement Address", meta:MUNGER_2007.meta, ctx:"가장 똑똑하진 않아도 계속 배워서 앞서가는 ‘학습 기계’ 같은 사람들을 두고 하며", url:MUNGER_2007.url, verified:V_MG},
+    {who:"워런 버핏", whoEn:"Warren Buffett",
+     en:"After all, you only find out who is swimming naked when the tide goes out.",
+     ko:"결국 누가 벌거벗고 수영하고 있었는지는, 조수가 빠져나가야 알게 됩니다.",
+     title:"버크셔 해서웨이 2001년도 주주서한", meta:"Chairman’s Letter, 2001", ctx:"보험·재보험 거래상대방의 신용 위험을 설명하며", url:BH+"2001pdf.pdf", verified:V_BH},
+    {who:"찰리 멍거", whoEn:"Charlie Munger",
+     en:"Wisdom acquisition is a moral duty. It’s not something you do just to advance in life.",
+     ko:"지혜를 쌓는 것은 도덕적 의무입니다. 출세하려고 하는 일이 아닙니다.",
+     title:"2007 USC Law School Commencement Address", meta:MUNGER_2007.meta, ctx:"평생 배우는 삶의 의미를 이야기하며", url:MUNGER_2007.url, verified:V_MG},
+    {who:"워런 버핏", whoEn:"Warren Buffett",
+     en:"Long ago, Ben Graham taught me that ‘Price is what you pay; value is what you get.’ Whether we’re talking about socks or stocks, I like buying quality merchandise when it is marked down.",
+     ko:"벤 그레이엄이 오래전에 가르쳐 줬습니다. ‘가격은 당신이 내는 것이고, 가치는 당신이 얻는 것이다.’ 양말이든 주식이든, 저는 좋은 물건이 할인될 때 사는 것을 좋아합니다.",
+     title:"버크셔 해서웨이 2008년도 주주서한", meta:"Chairman’s Letter, 2008", ctx:"주가가 떨어졌을 때의 태도를 설명하며", url:BH+"2008ltr.pdf", verified:V_BH}
+  ];
+
+  var quoteOffset = 0;
+  function quoteIndex(){
+    var d = new Date(), n = QUOTES.length;
+    var day = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+    return (((day + quoteOffset) % n) + n) % n;
+  }
+
+  function renderQuoteView(){
+    var i = quoteIndex(), q = QUOTES[i], d = new Date();
+    var dateLabel = d.getFullYear() + "." + pad(d.getMonth() + 1) + "." + pad(d.getDate());
+    var kicker = quoteOffset === 0 ? "오늘의 명언 · " + dateLabel : "다른 명언 보는 중 · 오늘의 명언은 ‘오늘’ 버튼으로 돌아가요";
+    var h = '<div class="quote-wrap">';
+    h += '<div class="card quote-card">';
+    h += '<div class="quote-kicker">' + escapeHtml(kicker) + '</div>';
+    h += '<blockquote class="quote-ko">“' + escapeHtml(q.ko) + '”</blockquote>';
+    h += '<p class="quote-en" lang="en">“' + escapeHtml(q.en) + '”</p>';
+    h += '<div class="quote-who"><span class="quote-name">' + escapeHtml(q.who) + '</span><span class="quote-role">' + escapeHtml(q.whoEn) + '</span></div>';
+    h += '<div class="quote-src">';
+    h += '<div class="quote-src-title">' + escapeHtml(q.title) + '</div>';
+    h += '<div>' + escapeHtml(q.meta) + '</div>';
+    if(q.ctx) h += '<div>맥락: ' + escapeHtml(q.ctx) + '</div>';
+    h += '<div><a href="' + escapeHtml(q.url) + '" target="_blank" rel="noopener noreferrer">원문 보기 ↗</a></div>';
+    h += '<div class="quote-verified">✓ ' + escapeHtml(q.verified) + '</div>';
+    h += '</div>';
+    h += '</div>';
+    h += '<div class="quote-nav">';
+    h += '<button type="button" class="icon-btn" data-action="quote-prev">← 이전</button>';
+    h += '<button type="button" class="icon-btn" data-action="quote-today"' + (quoteOffset === 0 ? ' disabled' : '') + '>오늘</button>';
+    h += '<button type="button" class="icon-btn" data-action="quote-random">무작위</button>';
+    h += '<button type="button" class="icon-btn" data-action="quote-next">다음 →</button>';
+    h += '</div>';
+    h += '<div class="quote-count mono">' + (i + 1) + ' / ' + QUOTES.length + '</div>';
+    h += '<div class="quote-note">번역은 원문에 가깝게 옮긴 것이고, 기준은 영어 원문이에요. 출처를 확인하지 못한 유명 문장은 넣지 않았어요.</div>';
+    h += '</div>';
+    return h;
+  }
+
   /* ---------------- render: shell ---------------- */
   function render(){
     var app = document.getElementById("app");
@@ -1157,6 +1300,7 @@
     html += '  <button class="tab-wide-btn' + (state.view==="day"?" active":"") + '" data-action="show-day">일간</button>';
     html += '  <button class="tab-wide-btn' + (state.view==="stats"?" active":"") + '" data-action="show-stats">통계</button>';
     html += '  <button class="tab-wide-btn' + (state.view==="buy"?" active":"") + '" data-action="show-buy">BTC 매수기준</button>';
+    html += '  <button class="tab-wide-btn' + (state.view==="quote"?" active":"") + '" data-action="show-quote">오늘의 명언</button>';
     html += '</div>';
     html += '<div class="toolbar-row">';
     html += '  <div class="month-nav">';
@@ -1179,6 +1323,8 @@
       html += renderDayView(state.selectedDate);
     } else if(state.view === "stats"){
       html += renderStatsView();
+    } else if(state.view === "quote"){
+      html += renderQuoteView();
     } else {
       html += renderBuyView();
     }
@@ -1638,6 +1784,16 @@
       case "show-stats": state.view="stats"; save(); render(); break;
       case "show-buy": state.view="buy"; save(); render(); break;
       case "logout": logout(); break;
+      case "show-quote": state.view="quote"; save(); render(); break;
+      case "quote-prev": quoteOffset--; render(); break;
+      case "quote-next": quoteOffset++; render(); break;
+      case "quote-today": quoteOffset = 0; render(); break;
+      case "quote-random": {
+        var step = 1 + Math.floor(Math.random() * (QUOTES.length - 1));
+        quoteOffset += step;
+        render();
+        break;
+      }
       case "auth-mode": {
         var emailEl = document.querySelector(".login-card input[name=email]");
         renderLogin("", emailEl ? emailEl.value : "", t.getAttribute("data-mode"));
