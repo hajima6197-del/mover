@@ -93,7 +93,12 @@
   }
 
   /* ---- top nav ---- */
-  .tabs-wide{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;background:var(--surface-2);padding:5px;border-radius:13px;border:1px solid var(--border-soft);margin-bottom:16px;box-shadow:var(--shadow);}
+  .tabs-wide{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;background:var(--surface-2);padding:5px;border-radius:13px;border:1px solid var(--border-soft);margin-bottom:16px;box-shadow:var(--shadow);}
+  .tabs-sub{display:flex;gap:6px;margin:-4px 0 16px;flex-wrap:wrap;}
+  .tab-sub-btn{border:1px solid var(--border);background:var(--surface);padding:7px 16px;border-radius:999px;font-size:13.5px;font-weight:600;color:var(--ink-muted);font-family:inherit;}
+  .tab-sub-btn:hover{color:var(--ink);}
+  .tab-sub-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .empty-page{text-align:center;color:var(--ink-faint);padding:56px 16px;font-size:14px;}
   .tab-wide-btn{border:none;background:transparent;padding:13px 14px;border-radius:9px;font-size:15px;font-weight:600;color:var(--ink-muted);font-family:'Gowun Batang',serif;letter-spacing:0.02em;}
   .tab-wide-btn:hover{color:var(--ink);}
   .tab-wide-btn.active{background:var(--surface);color:var(--accent);box-shadow:var(--shadow);}
@@ -531,7 +536,7 @@
     if(!parsed.selectedDate) parsed.selectedDate = def.selectedDate;
     if(typeof parsed.year !== "number") parsed.year = def.year;
     if(typeof parsed.month !== "number") parsed.month = def.month;
-    if(!parsed.view) parsed.view = "month";
+    if(["month","day","stats","buy","quote","apt","redev"].indexOf(parsed.view) < 0) parsed.view = "month";
     return parsed;
   }
 
@@ -1291,17 +1296,44 @@
   }
 
   /* ---------------- render: shell ---------------- */
+  var lastPlanView = "month", lastRealView = "apt";
+  function groupOf(view){
+    if(view === "month" || view === "day" || view === "stats") return "plan";
+    if(view === "buy") return "crypto";
+    if(view === "apt" || view === "redev") return "realestate";
+    return "quote";
+  }
   function render(){
     var app = document.getElementById("app");
     var monthLabel = state.year + "년 " + (state.month+1) + "월";
     var html = "";
+    var group = groupOf(state.view);
+    if(group === "plan") lastPlanView = state.view;
+    if(group === "realestate") lastRealView = state.view;
     html += '<div class="tabs-wide">';
-    html += '  <button class="tab-wide-btn' + (state.view==="month"?" active":"") + '" data-action="show-month">월간</button>';
-    html += '  <button class="tab-wide-btn' + (state.view==="day"?" active":"") + '" data-action="show-day">일간</button>';
-    html += '  <button class="tab-wide-btn' + (state.view==="stats"?" active":"") + '" data-action="show-stats">통계</button>';
-    html += '  <button class="tab-wide-btn' + (state.view==="buy"?" active":"") + '" data-action="show-buy">BTC 매수기준</button>';
-    html += '  <button class="tab-wide-btn' + (state.view==="quote"?" active":"") + '" data-action="show-quote">오늘의 명언</button>';
+    html += '  <button class="tab-wide-btn' + (group==="plan"?" active":"") + '" data-action="show-plan">플랜</button>';
+    html += '  <button class="tab-wide-btn' + (group==="crypto"?" active":"") + '" data-action="show-buy">암호화폐</button>';
+    html += '  <button class="tab-wide-btn' + (group==="realestate"?" active":"") + '" data-action="show-realestate">부동산</button>';
+    html += '  <button class="tab-wide-btn' + (group==="quote"?" active":"") + '" data-action="show-quote">오늘의 명언</button>';
     html += '</div>';
+    if(group === "plan"){
+      html += '<div class="tabs-sub">';
+      html += '  <button class="tab-sub-btn' + (state.view==="month"?" active":"") + '" data-action="show-month">월간</button>';
+      html += '  <button class="tab-sub-btn' + (state.view==="day"?" active":"") + '" data-action="show-day">일간</button>';
+      html += '  <button class="tab-sub-btn' + (state.view==="stats"?" active":"") + '" data-action="show-stats">통계</button>';
+      html += '</div>';
+    } else if(group === "realestate"){
+      html += '<div class="tabs-sub">';
+      html += '  <button class="tab-sub-btn' + (state.view==="apt"?" active":"") + '" data-action="show-apt">아파트</button>';
+      html += '  <button class="tab-sub-btn' + (state.view==="redev"?" active":"") + '" data-action="show-redev">재개발</button>';
+      html += '</div>';
+    }
+    if(group === "realestate"){
+      html += '<div class="card"><h2>' + (state.view==="apt" ? "아파트" : "재개발") + '</h2><div class="empty-page">아직 비어 있어요.</div></div>';
+      html += '<footer class="note">' + renderCloudStatus() + '</footer>';
+      app.innerHTML = html;
+      return;
+    }
     html += '<div class="toolbar-row">';
     html += '  <div class="month-nav">';
     html += '    <button class="nav-btn" data-action="prev-month" title="이전 달">&#8249;</button>';
@@ -1783,6 +1815,10 @@
       case "show-day": state.view="day"; save(); render(); break;
       case "show-stats": state.view="stats"; save(); render(); break;
       case "show-buy": state.view="buy"; save(); render(); break;
+      case "show-plan": state.view=lastPlanView; save(); render(); break;
+      case "show-realestate": state.view=lastRealView; save(); render(); break;
+      case "show-apt": state.view="apt"; save(); render(); break;
+      case "show-redev": state.view="redev"; save(); render(); break;
       case "logout": logout(); break;
       case "show-quote": state.view="quote"; save(); render(); break;
       case "quote-prev": quoteOffset--; render(); break;
