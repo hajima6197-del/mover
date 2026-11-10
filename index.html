@@ -410,6 +410,7 @@
 </style>
 
 <div class="app" id="app"></div>
+<div class="app" id="rdv-host" hidden style="padding-top:0"></div>
 
 <script>
 (function(){
@@ -518,8 +519,22 @@
       timeCategories: cloneTimeCategories(),
       buyChecklists: [],
       btc: newBtc(),
+      redev: normalizeRedev(null),
       days: {}
     };
+  }
+
+  /* 재개발 비교평가표(redevelopment.html)가 보내오는 데이터. 계정 동기화 대상에 포함된다. */
+  function normalizeRedev(r){
+    var out = {cands:{}, stress:{sp:15, delay:2}};
+    if(r && typeof r === "object"){
+      if(r.cands && typeof r.cands === "object" && !Array.isArray(r.cands)) out.cands = r.cands;
+      if(r.stress && typeof r.stress === "object"){
+        if(r.stress.sp !== undefined && r.stress.sp !== null) out.stress.sp = r.stress.sp;
+        if(r.stress.delay !== undefined && r.stress.delay !== null) out.stress.delay = r.stress.delay;
+      }
+    }
+    return out;
   }
 
   function sanitizeState(parsed){
@@ -532,6 +547,7 @@
     parsed.timeCategories = parsed.timeCategories && parsed.timeCategories.length ? parsed.timeCategories : def.timeCategories;
     parsed.buyChecklists = parsed.buyChecklists || [];
     parsed.btc = normalizeBtc(parsed.btc);
+    parsed.redev = normalizeRedev(parsed.redev);
     parsed.days = parsed.days || {};
     if(!parsed.selectedDate) parsed.selectedDate = def.selectedDate;
     if(typeof parsed.year !== "number") parsed.year = def.year;
@@ -568,7 +584,7 @@
   }
 
   function dataPart(){
-    return {categories:state.categories, templates:state.templates, timeCategories:state.timeCategories, buyChecklists:state.buyChecklists, btc:state.btc, days:state.days};
+    return {categories:state.categories, templates:state.templates, timeCategories:state.timeCategories, buyChecklists:state.buyChecklists, btc:state.btc, redev:state.redev, days:state.days};
   }
 
   function setCloudStatus(s){
@@ -653,6 +669,7 @@
     state = sanitizeState(merged);
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
     lastPushedJson = JSON.stringify(dataPart());
+    sendRdv();
   }
 
   function initialSync(){
@@ -747,10 +764,12 @@
   }
 
   function renderLoading(msg){
+    showRdvHost(false);
     document.getElementById("app").innerHTML = '<div class="login-wrap"><div class="login-card"><h1 class="login-title">무버</h1><p class="login-sub">' + escapeHtml(msg) + '</p></div></div>';
   }
 
   function renderLogin(msg, email, mode, ok){
+    showRdvHost(false);
     var signup = mode === "signup";
     document.getElementById("app").innerHTML =
       '<div class="login-wrap"><form class="login-card" data-action="login-form" data-mode="' + (signup ? "signup" : "login") + '">' +
@@ -804,6 +823,7 @@
     try{ localStorage.removeItem(key); }catch(e){}
     STORAGE_KEY = STORAGE_BASE;
     state = defaultState();
+    if(rdvFrame){ rdvFrame.remove(); rdvFrame = null; rdvReady = false; }
     renderLogin(msg, email);
   }
 
@@ -1297,6 +1317,40 @@
 
   /* ---------------- render: shell ---------------- */
   var lastPlanView = "month", lastRealView = "apt";
+
+  /* ---- 재개발 비교평가표: redevelopment.html 을 iframe 으로 한 번만 만들고 계속 유지한다 ---- */
+  var rdvFrame = null, rdvReady = false;
+  var rdvOrigin = (location.origin === "null") ? "*" : location.origin;
+  function showRdvHost(show){
+    var host = document.getElementById("rdv-host");
+    var appEl = document.getElementById("app");
+    if(!host) return;
+    host.hidden = !show;
+    appEl.style.paddingBottom = show ? "0" : "";
+    if(show && !rdvFrame){
+      rdvFrame = document.createElement("iframe");
+      rdvFrame.title = "재개발 비교평가표";
+      rdvFrame.src = "redevelopment.html";
+      rdvFrame.style.cssText = "width:100%;height:900px;border:0;display:block;";
+      host.appendChild(rdvFrame);
+    }
+  }
+  function sendRdv(){
+    if(!rdvFrame || !rdvReady || !rdvFrame.contentWindow) return;
+    rdvFrame.contentWindow.postMessage({
+      type:"rdv-init", cands:state.redev.cands, stress:state.redev.stress,
+      synced: !!(sbConfigured() && session && cloudReady)
+    }, rdvOrigin);
+  }
+  window.addEventListener("message", function(e){
+    if(!rdvFrame || e.source !== rdvFrame.contentWindow) return;
+    if(e.origin !== location.origin && location.origin !== "null") return;
+    var d = e.data;
+    if(!d || typeof d !== "object") return;
+    if(d.type === "rdv-ready"){ rdvReady = true; sendRdv(); }
+    else if(d.type === "rdv-save"){ state.redev = normalizeRedev({cands:d.cands, stress:d.stress}); save(); }
+    else if(d.type === "rdv-height" && typeof d.h === "number" && d.h > 50){ rdvFrame.style.height = Math.ceil(d.h) + "px"; }
+  });
   function groupOf(view){
     if(view === "month" || view === "day" || view === "stats") return "plan";
     if(view === "buy") return "crypto";
@@ -1329,11 +1383,15 @@
       html += '</div>';
     }
     if(group === "realestate"){
-      html += '<div class="card"><h2>' + (state.view==="apt" ? "아파트" : "재개발") + '</h2><div class="empty-page">아직 비어 있어요.</div></div>';
-      html += '<footer class="note">' + renderCloudStatus() + '</footer>';
+      if(state.view === "apt"){
+        html += '<div class="card"><h2>아파트</h2><div class="empty-page">아직 비어 있어요.</div></div>';
+        html += '<footer class="note">' + renderCloudStatus() + '</footer>';
+      }
       app.innerHTML = html;
+      showRdvHost(state.view === "redev");
       return;
     }
+    showRdvHost(false);
     html += '<div class="toolbar-row">';
     html += '  <div class="month-nav">';
     html += '    <button class="nav-btn" data-action="prev-month" title="이전 달">&#8249;</button>';

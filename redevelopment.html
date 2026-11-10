@@ -1,0 +1,575 @@
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name="robots" content="noindex,nofollow"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>재개발 비교평가표</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: 위에서 아래로 "비교 요약 → 물건 선택 → 입력·체크리스트". 넓은 화면에서는 입력 옆에 계산 결과가 따라온다. */
+:root{
+  --bg:#f2f5f4; --surface:#ffffff; --sunk:#e8edeb; --line:#d3dcd9;
+  --fg:#17262a; --muted:#5c6d70; --accent:#0d6a70; --accent-fg:#ffffff; --accent-soft:#d9ecec;
+  --good:#1f7a4d; --good-soft:#dcf0e4; --warn:#9a6400; --warn-soft:#f7ead0; --bad:#b3372f; --bad-soft:#f8dedb;
+  --font:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#10191b; --surface:#18252a; --sunk:#0c1416; --line:#2c3d42;
+  --fg:#e6eeee; --muted:#93a6a9; --accent:#56c2c4; --accent-fg:#06282a; --accent-soft:#173c40;
+  --good:#63cc93; --good-soft:#163a28; --warn:#e3b256; --warn-soft:#3d2f10; --bad:#f08a80; --bad-soft:#45201d;
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#10191b; --surface:#18252a; --sunk:#0c1416; --line:#2c3d42;
+  --fg:#e6eeee; --muted:#93a6a9; --accent:#56c2c4; --accent-fg:#06282a; --accent-soft:#173c40;
+  --good:#63cc93; --good-soft:#163a28; --warn:#e3b256; --warn-soft:#3d2f10; --bad:#f08a80; --bad-soft:#45201d;
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+.host body{background:transparent}
+.host .wrap{padding-block:4px 24px}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:28px}
+h1{font-size:26px;font-weight:700;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h2{font-size:18px;font-weight:700;margin:0;text-wrap:balance}
+h3{font-size:15px;font-weight:600;margin:0}
+p{margin:0}
+.lede{color:var(--muted);max-width:62ch;margin-top:6px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.head{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between}
+.status{font-size:13px;color:var(--muted)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.spread{justify-content:space-between}
+
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 14px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.danger{color:var(--bad)}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:13px;font-weight:500}
+.field .hint{font-size:12px;color:var(--muted)}
+.inp{border:1px solid var(--line);background:var(--bg);border-radius:7px;padding:7px 10px;width:100%;min-width:0}
+.inp.n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+.unit{display:flex;align-items:center;gap:6px}
+.unit span{font-size:13px;color:var(--muted);white-space:nowrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px 16px}
+.inline-inp{width:76px}
+
+/* 비교 */
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;vertical-align:middle;margin-right:5px}
+.lg-bar{width:22px;height:8px;border-radius:4px;background:var(--accent-soft);border:1px solid var(--accent)}
+.lg-dot{width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.lg-x{width:9px;height:9px;transform:rotate(45deg);border:2px solid var(--bad);background:var(--surface)}
+.chart{display:flex;flex-direction:column;gap:12px}
+.crow{display:grid;grid-template-columns:minmax(120px,200px) 1fr;gap:6px 14px;align-items:center}
+.crow .nm{font-weight:500;font-size:14px;overflow-wrap:anywhere}
+.track{position:relative;height:30px;background:var(--sunk);border-radius:6px}
+.track .zero{position:absolute;top:0;bottom:0;width:1px;background:var(--fg);opacity:.55}
+.track .rng{position:absolute;top:10px;height:10px;border-radius:5px;background:var(--accent-soft);border:1px solid var(--accent)}
+.track .dot{position:absolute;top:9px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--accent)}
+.track .sx{position:absolute;top:10px;width:10px;height:10px;margin-left:-5px;transform:rotate(45deg);border:2px solid var(--bad);background:var(--surface)}
+.axis{display:grid;grid-template-columns:minmax(120px,200px) 1fr;gap:14px;font-size:12px;color:var(--muted)}
+.axis .ticks{position:relative;height:18px}
+.axis .ticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.axis .ticks span:first-child{transform:none}
+.axis .ticks span:last-child{transform:translateX(-100%)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 12px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;color:var(--muted);font-weight:500;position:sticky;left:0;background:var(--surface)}
+thead th{font-weight:600;white-space:normal;min-width:130px;overflow-wrap:anywhere}
+tr.grp td{font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--muted);background:var(--sunk);border-bottom:0;padding-block:5px}
+tr.grp td:first-child{background:var(--sunk)}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+.pill{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.ex{background:var(--sunk);color:var(--muted)}
+.pill.site{background:var(--accent-soft);color:var(--accent)}
+.empty{border:1px dashed var(--line);border-radius:10px;padding:28px 18px;text-align:center;color:var(--muted)}
+
+/* 탭 */
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tab{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;cursor:pointer;max-width:100%;overflow-wrap:anywhere;text-align:left}
+.tab[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:600}
+
+/* 편집 */
+.editor{display:grid;gap:18px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:940px){
+  .editor{grid-template-columns:minmax(0,1fr) 350px}
+  .editor>.panel{grid-column:1}
+  .editor>.result{grid-column:2;grid-row:1/span 8;align-self:start;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+}
+.kv{display:grid;grid-template-columns:1fr auto;gap:5px 12px;font-size:14px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;text-align:right}
+.kv .total{font-weight:700;color:var(--fg)}
+.result table th,.result table td{padding:6px 8px;font-size:13px}
+.result thead th{min-width:0}
+.formula{font-size:12px;color:var(--muted);background:var(--sunk);border-radius:7px;padding:8px 10px}
+.stages{display:flex;flex-wrap:wrap;gap:6px}
+.stage{border:1px solid var(--line);background:var(--bg);border-radius:7px;padding:5px 10px;font-size:13px;cursor:pointer}
+.stage[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.items{display:flex;flex-direction:column}
+.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.item .t{font-size:14px;font-weight:500}
+.item .h{font-size:12px;color:var(--muted)}
+@media (max-width:560px){.item{grid-template-columns:minmax(0,1fr)}}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{border:0;border-left:1px solid var(--line);background:var(--bg);padding:6px 12px;font-size:13px;cursor:pointer}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"].g{background:var(--good-soft);color:var(--good);font-weight:600}
+.seg button[aria-pressed="true"].m{background:var(--warn-soft);color:var(--warn);font-weight:600}
+.seg button[aria-pressed="true"].b{background:var(--bad-soft);color:var(--bad);font-weight:600}
+.cat-head{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline;justify-content:space-between;margin-top:8px}
+.switch{display:inline-flex;gap:8px;align-items:center;font-size:13px;cursor:pointer}
+textarea.inp{min-height:90px;resize:vertical}
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <div>
+      <h1>재개발 비교평가표</h1>
+      <p class="lede">물건마다 다른 조건을 완공 후 신축 한 채의 총 취득원가로 환산해 나란히 비교합니다. 금액 단위는 모두 억원입니다.</p>
+    </div>
+    <div class="status" id="status" role="status">불러오는 중…</div>
+  </header>
+
+  <section class="panel" aria-labelledby="cmp-h">
+    <div class="row spread">
+      <h2 id="cmp-h">비교 요약</h2>
+      <div class="row">
+        <div class="field"><label for="sort" class="small muted">정렬</label>
+          <select id="sort" class="inp">
+            <option value="low">저점 시세 기준 마진율</option>
+            <option value="now">현재 시세 기준 마진율</option>
+            <option value="cagr">연환산 마진율</option>
+            <option value="stress">스트레스 마진</option>
+            <option value="score">체크리스트 점수</option>
+          </select></div>
+      </div>
+    </div>
+    <div class="row small">
+      <span class="muted">스트레스 가정</span>
+      <label for="st-sp">조합원 분양가 인상</label>
+      <span class="unit"><input id="st-sp" class="inp n inline-inp" type="number" inputmode="decimal" step="1"><span>%</span></span>
+      <label for="st-delay">사업 지연</label>
+      <span class="unit"><input id="st-delay" class="inp n inline-inp" type="number" inputmode="decimal" step="0.5"><span>년</span></span>
+      <span class="muted">+ 비교 단지 저점 시세 적용</span>
+    </div>
+    <div id="compare"></div>
+    <p class="small muted">모든 수치는 입력값을 그대로 계산한 결과이며 매수 추천이 아닙니다. 결격 점검에 '문제'가 하나라도 있거나 확인율이 낮으면 마진이 커 보여도 믿을 수 없는 숫자입니다.</p>
+  </section>
+
+  <section aria-labelledby="list-h" style="display:flex;flex-direction:column;gap:12px">
+    <div class="row spread">
+      <h2 id="list-h">물건</h2>
+      <button class="btn primary" id="add" type="button">물건 추가</button>
+    </div>
+    <div class="tabs" id="tabs"></div>
+  </section>
+
+  <div class="editor" id="editor"></div>
+</div>
+
+<script>
+const STAGES=["정비구역 지정 전","정비구역 지정","조합설립인가","사업시행인가","관리처분인가","이주·철거","착공"];
+const TYPES=["빌라(다세대)","단독·다가구","상가","토지·도로","무허가 건물","기타"];
+
+const F_PRICE=[
+ ["price","매수가","중개업소 3곳 이상 호가와 최근 실거래로 교차 확인","억"],
+ ["appraisal","감정평가액","확정 전이면 추정치. 조합·중개업소 추정 근거를 받아둘 것","억"],
+ ["ratio","비례율","조합 총회 책자·관리처분계획. 모르면 100","%"],
+ ["memberPrice","조합원 분양가","희망 평형 기준. 조합 안내문 또는 추정","억"],
+ ["cost","취득세·부대비용","취득세, 중개보수, 법무비","억"],
+ ["deposit","승계 보증금","인수하는 전세·월세 보증금","억"],
+ ["loan","대출금","매수 시 받는 대출","억"],
+ ["rate","대출 금리","연 이율","%"],
+ ["years","입주까지 예상 기간","현재 단계에서 입주까지. 보수적으로","년"],
+ ["living","입주 전 추가 주거비","이주 후 입주까지 따로 살며 드는 총액","억"]];
+const F_VALUE=[
+ ["compLow","비교 단지 하락장 저점","같은 평형, 최근 하락기 최저 실거래가","억"],
+ ["compNow","비교 단지 현재 시세","최근 3개월 실거래 중간값","억"],
+ ["compHigh","비교 단지 전고점","지난 상승장 최고 실거래가","억"],
+ ["adj","체급 조정","비교 단지보다 입지·세대수·브랜드가 못하면 음수","%"]];
+const F_BIZ=[
+ ["members","조합원 수","조합설립인가·사업시행계획 고시","명"],
+ ["totalUnits","계획 총 세대수","정비계획·사업시행계획 고시","세대"],
+ ["rental","임대 세대수","같은 고시문","세대"]];
+
+const KILL=[
+ {id:"k1",t:"권리산정기준일 이전부터 분양자격 요건을 갖춘 물건이다",h:"기준일 이후 지분 쪼개기·신축 빌라는 현금청산. 조합과 구청에 서면 또는 통화로 확인",site:false},
+ {id:"k2",t:"매도인이 구역 안에 다른 물건을 갖고 있지 않다 (다물권자 아님)",h:"다물권자 물건 일부를 사면 입주권이 안 나올 수 있음. 조합 사무실에서 확인",site:true},
+ {id:"k3",t:"물건 유형별 분양자격을 조합에서 직접 확인했다",h:"과소 필지, 무허가 건물, 도로, 상가는 조례 요건이 따로 있음",site:true},
+ {id:"k4",t:"조합원 지위 양도가 가능한 시점·사유다",h:"양도 제한 구간이면 매수해도 현금청산. 예외 사유 해당 여부를 조합에 확인",site:false},
+ {id:"k5",t:"토지거래허가·실거주 의무를 내가 충족할 수 있다",h:"구청 토지거래허가 담당 부서에 매수 전 확인. 규제는 대책마다 바뀜",site:false},
+ {id:"k6",t:"등기부·건축물대장·토지대장이 서로 일치하고 권리 하자가 없다",h:"압류, 가처분, 과다 근저당, 위반건축물 표시 여부",site:false},
+ {id:"k7",t:"매도인이 분양신청을 마쳤고 현금청산 대상이 아니다",h:"분양신청 기간이 지난 구역만 해당. 조합에 조합원 명부로 확인",site:true}];
+
+const CATS=[
+ {id:"loc",name:"입지 (완공 후 체급)",w:30,items:[
+  {id:"l1",t:"주요 업무지구까지 대중교통 소요시간",h:"출근 시간대 기준 강남·여의도·도심 등. 지도 앱으로 측정"},
+  {id:"l2",t:"역·정류장까지 실제 도보 접근성",h:"구역 중심에서 직접 걸어보고 시간과 경사를 기록",site:true},
+  {id:"l3",t:"학군과 통학로",h:"초등학교 배정과 통학로 안전, 중학교 학업성취도, 학원가 거리"},
+  {id:"l4",t:"지형과 주변 환경",h:"언덕·옹벽, 유흥가·혐오시설, 소음. 낮과 밤 모두 방문",site:true},
+  {id:"l5",t:"생활 편의시설",h:"마트, 병원, 공원이 도보권인지",site:true},
+  {id:"l6",t:"주변이 함께 바뀌는가",h:"인접 구역 정비사업과 신축 대단지 유무. 혼자 섬처럼 남는 구역은 감점",site:true}]},
+ {id:"biz",name:"사업성",w:20,items:[
+  {id:"b1",t:"일반분양 비율",h:"조합원 수 대비 총 세대수가 넉넉한가. 오른쪽 계산값 참고"},
+  {id:"b2",t:"비례율 근거의 신뢰도",h:"조합 총회 자료의 수입·지출 가정을 직접 봤는가"},
+  {id:"b3",t:"공사비 확정 정도",h:"시공사 본계약 체결 여부, 인상 협의나 분쟁 이력"},
+  {id:"b4",t:"일반분양가 가정의 보수성",h:"조합이 가정한 분양가가 주변 시세보다 낮게 잡혀 있는가"},
+  {id:"b5",t:"대지지분과 용적률 여유",h:"평균 대지지분이 크고 현황 대비 계획 용적률 차이가 클수록 유리"}]},
+ {id:"risk",name:"사업 단계와 지연 위험",w:20,items:[
+  {id:"r1",t:"조합 내부 갈등 정도",h:"비대위 현수막, 소송, 조합장 해임 총회 이력. 현장과 조합 사무실에서 확인",site:true},
+  {id:"r2",t:"협의가 어려운 시설",h:"상가, 종교시설, 학교, 공공시설과의 협의 진행 상황",site:true},
+  {id:"r3",t:"인허가 일정 준수 이력",h:"지금까지 단계별 소요 기간이 계획과 얼마나 달랐는가"},
+  {id:"r4",t:"이주·철거 진행도",h:"공가 비율, 남은 세대, 명도 소송 여부",site:true},
+  {id:"r5",t:"시공사 신뢰도",h:"브랜드 선호도와 재무 상태, 다른 현장 공사 중단 이력"}]},
+ {id:"unit",name:"물건",w:15,items:[
+  {id:"u1",t:"감정평가액 추정 근거",h:"공시지가, 인근 감정평가 사례와 비교해 납득되는가"},
+  {id:"u2",t:"희망 평형 배정 가능성",h:"권리가액 순위로 원하는 평형을 받을 수 있는가. 조합에 문의",site:true},
+  {id:"u3",t:"임차인 현황과 명도",h:"보증금, 계약 만기, 이주 협조 여부",site:true},
+  {id:"u4",t:"건물 상태",h:"누수, 균열. 입주 전까지 임대나 거주가 가능한가",site:true},
+  {id:"u5",t:"매수가의 교차 검증",h:"중개업소 3곳 이상에서 같은 조건 매물과 비교",site:true}]},
+ {id:"fund",name:"자금과 규제",w:15,items:[
+  {id:"f1",t:"지연을 버틸 자금 여력",h:"2년 더 늦어져도 이자와 생활비를 감당할 수 있는가"},
+  {id:"f2",t:"이주비·중도금 대출 조건",h:"한도와 금리, 본인 소득 기준 가능 여부를 은행에서 확인"},
+  {id:"f3",t:"세금 계산 완료",h:"취득세, 보유세, 양도세를 세무사 또는 계산기로 확인"},
+  {id:"f4",t:"입주 전 거주 계획",h:"이주 후 입주까지 살 곳과 비용이 정해졌는가"},
+  {id:"f5",t:"최신 규제 확인",h:"대출 규제와 양도 제한을 매수 직전 시점 기준으로 다시 확인"}]}];
+
+const S={cands:{},sel:null,sort:"low",siteOnly:false,stress:{sp:15,delay:2},mode:"loading"};
+let col=null, editorSig="", canWrite=true;
+const dirty={},ver={},timers={},saving={},again={};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const clone=o=>JSON.parse(JSON.stringify(o));
+const N=v=>{const x=parseFloat(v);return isFinite(x)?x:0};
+const has=v=>v!==""&&v!=null&&isFinite(parseFloat(v));
+const eok=v=>v==null||!isFinite(v)?"—":v.toFixed(2)+"억";
+const sgn=v=>v==null||!isFinite(v)?"—":(v>0?"+":"")+v.toFixed(2)+"억";
+const pct=v=>v==null||!isFinite(v)?"—":(v*100).toFixed(1)+"%";
+const cls=v=>v==null||!isFinite(v)?"":v>=0?"pos":"neg";
+
+function calc(c,st){
+  const n=c.n||{}, r={};
+  r.right=N(n.appraisal)*(has(n.ratio)?N(n.ratio):100)/100;
+  r.premium=N(n.price)-N(n.appraisal);
+  r.extra=N(n.memberPrice)-r.right;
+  const yrs=N(n.years);
+  r.fin=N(n.loan)*N(n.rate)/100*yrs;
+  r.total=N(n.price)+r.extra+N(n.cost)+r.fin+N(n.living);
+  r.cash=N(n.price)+N(n.cost)-N(n.deposit)-N(n.loan);
+  r.ready=has(n.price)&&has(n.appraisal)&&has(n.memberPrice);
+  const k=1+N(n.adj)/100;
+  r.sc={};
+  for(const [key,f] of [["low","compLow"],["now","compNow"],["high","compHigh"]]){
+    if(r.ready&&has(n[f])){const v=N(n[f])*k;r.sc[key]={value:v,margin:v-r.total,rate:v>0?(v-r.total)/v:null}}
+    else r.sc[key]=null;
+  }
+  r.cagr=r.sc.now&&yrs>0&&r.total>0?Math.pow(r.sc.now.value/r.total,1/yrs)-1:null;
+  // 스트레스: 조합원 분양가 인상 + 지연 + 저점 시세
+  if(r.sc.low){
+    const y2=yrs+N(st.delay);
+    const extra2=N(n.memberPrice)*(1+N(st.sp)/100)-r.right;
+    const fin2=N(n.loan)*N(n.rate)/100*y2;
+    const liv2=yrs>0?N(n.living)*y2/yrs:N(n.living);
+    r.stressTotal=N(n.price)+extra2+N(n.cost)+fin2+liv2;
+    r.stress=r.sc.low.value-r.stressTotal;
+  } else r.stress=null;
+  const tu=N(n.totalUnits);
+  r.general=tu>0&&has(n.members)?(tu-N(n.rental)-N(n.members))/tu:null;
+  // 체크리스트
+  let wsum=0,acc=0,answered=0,count=0; r.cat={};
+  for(const cat of CATS){
+    let a=0,s=0;
+    for(const it of cat.items){count++;const v=(c.chk||{})[it.id];if(v===0||v===1||v===2){a++;s+=v/2}}
+    answered+=a; r.cat[cat.id]=a?s/a:null;
+    if(a){wsum+=cat.w;acc+=cat.w*s/a}
+  }
+  r.score=wsum?acc/wsum*100:null;
+  let kOk=0,kBad=0;
+  for(const it of KILL){const v=(c.kill||{})[it.id];if(v==="ok")kOk++;else if(v==="bad")kBad++}
+  r.kBad=kBad; r.kOpen=KILL.length-kOk-kBad;
+  r.done=(answered+kOk+kBad)/(count+KILL.length);
+  return r;
+}
+
+function killPill(r){
+  if(r.kBad) return `<span class="pill bad">문제 ${r.kBad}건</span>`;
+  if(r.kOpen) return `<span class="pill warn">미확인 ${r.kOpen}건</span>`;
+  return `<span class="pill good">모두 통과</span>`;
+}
+function ordered(){
+  const ids=Object.keys(S.cands).sort((a,b)=>(S.cands[a].created||0)-(S.cands[b].created||0));
+  return ids;
+}
+
+function renderCompare(){
+  const el=$("compare"), ids=ordered();
+  if(S.mode==="loading"&&!ids.length){el.innerHTML=`<div class="empty">저장된 물건을 불러오는 중입니다.</div>`;return}
+  if(!ids.length){el.innerHTML=`<div class="empty">아직 등록된 물건이 없습니다. 아래 '물건 추가'로 첫 물건을 넣으면 여기에 총 취득원가와 안전마진이 나란히 표시됩니다.</div>`;return}
+  const rows=ids.map(id=>({id,c:S.cands[id],r:calc(S.cands[id],S.stress)}));
+  const key=x=>{const r=x.r;const v=S.sort==="low"?r.sc.low?.rate:S.sort==="now"?r.sc.now?.rate:S.sort==="cagr"?r.cagr:S.sort==="stress"?r.stress:r.score;return v==null||!isFinite(v)?-Infinity:v};
+  rows.sort((a,b)=>key(b)-key(a));
+  // 차트 범위
+  const vals=[0];
+  rows.forEach(x=>{["low","now","high"].forEach(k=>x.r.sc[k]&&vals.push(x.r.sc[k].margin));x.r.stress!=null&&vals.push(x.r.stress)});
+  let mn=Math.min(...vals), mx=Math.max(...vals);
+  if(mx-mn<1){mx+=.5;mn-=.5}
+  const pad=(mx-mn)*.04; mn-=pad; mx+=pad;
+  const pos=v=>((v-mn)/(mx-mn)*100).toFixed(2)+"%";
+  const anyChart=rows.some(x=>x.r.sc.low||x.r.sc.now||x.r.sc.high);
+  let h="";
+  if(anyChart){
+    h+=`<div class="legend" style="margin-bottom:10px"><span><i class="lg-bar"></i>안전마진 범위 (저점~전고점 시세)</span><span><i class="lg-dot"></i>현재 시세 기준</span><span><i class="lg-x"></i>스트레스</span></div><div class="chart">`;
+    for(const x of rows){
+      const m=["low","now","high"].map(k=>x.r.sc[k]?.margin).filter(v=>v!=null);
+      let marks=`<span class="zero" style="left:${pos(0)}"></span>`;
+      if(m.length){const a=Math.min(...m),b=Math.max(...m);marks+=`<span class="rng" style="left:${pos(a)};width:calc(${pos(b)} - ${pos(a)})"></span>`}
+      if(x.r.sc.now) marks+=`<span class="dot" style="left:${pos(x.r.sc.now.margin)}"></span>`;
+      if(x.r.stress!=null) marks+=`<span class="sx" style="left:${pos(x.r.stress)}"></span>`;
+      h+=`<div class="crow"><div class="nm">${esc(x.c.name||"이름 없는 물건")}</div><div class="track" role="img" aria-label="안전마진 저점 ${sgn(x.r.sc.low?.margin)}, 현재 ${sgn(x.r.sc.now?.margin)}, 전고점 ${sgn(x.r.sc.high?.margin)}, 스트레스 ${sgn(x.r.stress)}">${marks}</div></div>`;
+    }
+    h+=`<div class="axis"><span></span><div class="ticks num"><span style="left:0">${sgn(mn)}</span><span style="left:${pos(0)}">0</span><span style="left:100%">${sgn(mx)}</span></div></div></div>`;
+  }
+  const cell=(v,f,c)=>`<td class="num ${c?cls(v):""}">${f(v)}</td>`;
+  const sc=(k)=>rows.map(x=>{const s=x.r.sc[k];return `<td class="num ${cls(s?.margin)}">${sgn(s?.margin)}<br><span class="small">${pct(s?.rate)}</span></td>`}).join("");
+  h+=`<div class="scroll" style="margin-top:16px"><table><thead><tr><th scope="col">항목</th>${rows.map(x=>`<th scope="col">${esc(x.c.name||"이름 없는 물건")}${x.c.example?' <span class="pill ex">예시</span>':""}</th>`).join("")}</tr></thead><tbody>
+  <tr><td>사업 단계</td>${rows.map(x=>`<td>${esc(STAGES[x.c.stage]??"—")}</td>`).join("")}</tr>
+  <tr class="grp"><td colspan="${rows.length+1}">원가</td></tr>
+  <tr><td>총 취득원가</td>${rows.map(x=>cell(x.r.ready?x.r.total:null,eok)).join("")}</tr>
+  <tr><td>초기 실투자금</td>${rows.map(x=>cell(has(x.c.n?.price)?x.r.cash:null,eok)).join("")}</tr>
+  <tr class="grp"><td colspan="${rows.length+1}">안전마진 (금액 · 마진율)</td></tr>
+  <tr><td>저점 시세 기준</td>${sc("low")}</tr>
+  <tr><td>현재 시세 기준</td>${sc("now")}</tr>
+  <tr><td>전고점 시세 기준</td>${sc("high")}</tr>
+  <tr><td>스트레스</td>${rows.map(x=>cell(x.r.stress,sgn,1)).join("")}</tr>
+  <tr><td>연환산 마진율 (현재 시세)</td>${rows.map(x=>cell(x.r.cagr,pct,1)).join("")}</tr>
+  <tr class="grp"><td colspan="${rows.length+1}">검증</td></tr>
+  <tr><td>일반분양 비율</td>${rows.map(x=>cell(x.r.general,pct)).join("")}</tr>
+  <tr><td>체크리스트 점수</td>${rows.map(x=>`<td class="num">${x.r.score==null?"—":x.r.score.toFixed(0)+"점"}</td>`).join("")}</tr>
+  <tr><td>확인율</td>${rows.map(x=>cell(x.r.done,pct)).join("")}</tr>
+  <tr><td>결격 점검</td>${rows.map(x=>`<td>${killPill(x.r)}</td>`).join("")}</tr>
+  </tbody></table></div>`;
+  el.innerHTML=h;
+}
+
+function renderTabs(){
+  const ids=ordered();
+  $("tabs").innerHTML=ids.map(id=>`<button type="button" class="tab" data-id="${esc(id)}" aria-pressed="${id===S.sel}">${esc(S.cands[id].name||"이름 없는 물건")}</button>`).join("")
+    ||(S.mode==="loading"?"":`<span class="muted small">등록된 물건이 없습니다.</span>`);
+}
+
+function numField(def,c){
+  const [k,label,hint,unit]=def;
+  return `<div class="field"><label for="f-${k}">${label}</label><div class="unit"><input class="inp n" id="f-${k}" data-k="${k}" type="number" inputmode="decimal" step="any" value="${esc(c.n?.[k]??"")}" ${canWrite?"":"disabled"}><span>${unit}</span></div><span class="hint">${hint}</span></div>`;
+}
+function seg(kind,id,v){
+  const opts=kind==="kill"?[["ok","통과","g"],["bad","문제","b"]]:[[2,"좋음","g"],[1,"보통","m"],[0,"나쁨","b"]];
+  return `<div class="seg" role="group">${opts.map(o=>`<button type="button" class="${o[2]}" data-seg="${kind}" data-id="${id}" data-v="${o[0]}" aria-pressed="${String(v)===String(o[0])}" ${canWrite?"":"disabled"}>${o[1]}</button>`).join("")}</div>`;
+}
+function itemRow(kind,it,v){
+  return `<div class="item"><div><div class="t">${it.t} ${it.site?'<span class="pill site">현장</span>':""}</div><div class="h">${it.h}</div></div>${seg(kind,it.id,v)}</div>`;
+}
+function sig(){return S.sel?S.sel+JSON.stringify(S.cands[S.sel])+S.siteOnly+canWrite:""}
+
+function renderEditor(){
+  const el=$("editor"), c=S.cands[S.sel];
+  if(!c){el.innerHTML="";editorSig="";return}
+  const so=S.siteOnly, flt=a=>so?a.filter(i=>i.site):a;
+  const kills=flt(KILL);
+  let h="";
+  h+=`<section class="panel"><div class="row spread"><h2>기본 정보 ${c.example?'<span class="pill ex">예시 · 가상의 수치</span>':""}</h2><span id="del-wrap"><button type="button" class="btn danger" id="del">이 물건 삭제</button></span></div>
+   <div class="grid"><div class="field" style="grid-column:1/-1"><label for="f-name">구역·물건 이름</label><input class="inp" id="f-name" data-t="name" value="${esc(c.name||"")}" placeholder="예: ○○구역 빌라 2층" ${canWrite?"":"disabled"}></div>
+   <div class="field"><label for="f-type">물건 유형</label><select class="inp" id="f-type" data-t="type" ${canWrite?"":"disabled"}>${TYPES.map(t=>`<option ${c.type===t?"selected":""}>${t}</option>`).join("")}</select></div></div>
+   <div class="field"><span class="small" style="font-weight:500">현재 사업 단계</span><div class="stages">${STAGES.map((s,i)=>`<button type="button" class="stage" data-stage="${i}" aria-pressed="${c.stage===i}" ${canWrite?"":"disabled"}>${i+1}. ${s}</button>`).join("")}</div><span class="hint">구청 고시와 조합 사무실에서 확인. 뒤 단계일수록 숫자가 확정되고 남은 기간이 짧습니다.</span></div></section>`;
+  h+=`<section class="panel"><h2>가격 구조</h2><div class="grid">${F_PRICE.map(f=>numField(f,c)).join("")}</div></section>`;
+  h+=`<section class="panel"><h2>완공 후 가치</h2><div class="field"><label for="f-compName">비교 단지</label><input class="inp" id="f-compName" data-t="compName" value="${esc(c.compName||"")}" placeholder="같은 생활권의 신축·준신축 단지와 평형" ${canWrite?"":"disabled"}><span class="hint">국토부 실거래가 공개시스템에서 같은 평형의 실거래가를 찾습니다.</span></div><div class="grid">${F_VALUE.map(f=>numField(f,c)).join("")}</div></section>`;
+  h+=`<section class="panel"><h2>사업 규모</h2><div class="grid">${F_BIZ.map(f=>numField(f,c)).join("")}</div></section>`;
+  h+=`<aside class="panel result" id="result" aria-live="polite"></aside>`;
+  h+=`<section class="panel"><div class="row spread"><h2>결격 점검</h2><label class="switch"><input type="checkbox" id="site-only" ${so?"checked":""}> 현장 확인 항목만 보기</label></div><p class="small muted">하나라도 '문제'면 입주권이 안 나오거나 매수 자체가 불가능할 수 있습니다. 점수와 무관하게 먼저 통과해야 합니다.</p><div class="items">${kills.map(it=>itemRow("kill",it,(c.kill||{})[it.id])).join("")||'<p class="small muted">해당 항목이 없습니다.</p>'}</div></section>`;
+  h+=`<section class="panel"><h2>평가 체크리스트</h2><p class="small muted">확인한 항목만 점수에 반영됩니다. 분류별 가중치를 곱해 100점 만점으로 환산합니다.</p>`;
+  for(const cat of CATS){
+    const its=flt(cat.items); if(!its.length) continue;
+    h+=`<div class="cat-head"><h3>${cat.name}</h3><span class="small muted">가중치 ${cat.w}</span></div><div class="items">${its.map(it=>itemRow("chk",it,(c.chk||{})[it.id])).join("")}</div>`;
+  }
+  h+=`</section><section class="panel"><h2>현장 메모</h2><div class="field"><label for="f-memo" class="small muted">조합 사무실 통화 내용, 중개업소별 호가, 임장 인상</label><textarea class="inp" id="f-memo" data-t="memo" ${canWrite?"":"disabled"}>${esc(c.memo||"")}</textarea></div></section>`;
+  el.innerHTML=h; editorSig=sig(); renderResult();
+}
+
+function renderResult(){
+  const el=$("result"), c=S.cands[S.sel]; if(!el||!c) return;
+  const r=calc(c,S.stress), n=c.n||{};
+  const row=(k,label)=>{const s=r.sc[k];return `<tr><td>${label}</td><td class="num">${eok(s?.value)}</td><td class="num ${cls(s?.margin)}">${sgn(s?.margin)}</td><td class="num ${cls(s?.margin)}">${pct(s?.rate)}</td></tr>`};
+  el.innerHTML=`<h2>계산 결과</h2>
+  <dl class="kv">
+   <dt>권리가액</dt><dd class="num">${has(n.appraisal)?eok(r.right):"—"}</dd>
+   <dt>프리미엄</dt><dd class="num">${has(n.price)&&has(n.appraisal)?eok(r.premium):"—"}</dd>
+   <dt>추가분담금</dt><dd class="num">${r.ready?eok(r.extra):"—"}</dd>
+   <dt>금융비용 (단리)</dt><dd class="num">${eok(r.fin)}</dd>
+   <dt class="total">총 취득원가</dt><dd class="num total">${r.ready?eok(r.total):"—"}</dd>
+   <dt>초기 실투자금</dt><dd class="num">${has(n.price)?eok(r.cash):"—"}</dd>
+  </dl>
+  <div class="formula">권리가액 = 감정평가액 × 비례율<br>추가분담금 = 조합원 분양가 − 권리가액<br>총 취득원가 = 매수가 + 추가분담금 + 부대비용 + 금융비용 + 주거비</div>
+  <div class="scroll"><table><thead><tr><th scope="col">시세 가정</th><th scope="col">완공 가치</th><th scope="col">안전마진</th><th scope="col">마진율</th></tr></thead><tbody>${row("low","저점")}${row("now","현재")}${row("high","전고점")}</tbody></table></div>
+  <dl class="kv">
+   <dt>스트레스 마진</dt><dd class="num ${cls(r.stress)}">${sgn(r.stress)}</dd>
+   <dt>연환산 마진율</dt><dd class="num ${cls(r.cagr)}">${pct(r.cagr)}</dd>
+   <dt>일반분양 비율</dt><dd class="num">${pct(r.general)}</dd>
+   <dt>체크리스트 점수</dt><dd class="num">${r.score==null?"—":r.score.toFixed(0)+"점"}</dd>
+   <dt>확인율</dt><dd class="num">${pct(r.done)}</dd>
+   <dt>결격 점검</dt><dd>${killPill(r)}</dd>
+  </dl>
+  <p class="small muted">스트레스는 저점 시세에 조합원 분양가 ${N(S.stress.sp)}% 인상과 ${N(S.stress.delay)}년 지연을 함께 적용한 값입니다. 연환산 마진율은 총 취득원가 대비 현재 시세 기준 완공 가치를 입주까지 기간으로 나눈 단순 지표입니다.</p>`;
+}
+
+function refresh(){renderCompare();renderTabs();renderResult();editorSig=sig()}
+function setStatus(t){$("status").textContent=t}
+
+/* 저장 */
+function saveLocal(){try{localStorage.setItem("rdv-cands",JSON.stringify(S.cands))}catch(e){}}
+/* 무버 안에 iframe으로 들어가 있을 때는 저장을 부모 페이지(무버)에 맡긴다 → 로그인 계정에 자동 동기화 */
+const HOST=window.parent!==window, TO=location.origin==="null"?"*":location.origin;
+let hostSynced=false;
+function postHost(){ window.parent.postMessage({type:"rdv-save",cands:clone(S.cands),stress:clone(S.stress)},TO) }
+function applyHost(d){
+  S.mode="host"; hostSynced=!!d.synced;
+  const cands=d.cands||{}, seen={};
+  Object.keys(cands).forEach(id=>{seen[id]=1; if(!dirty[id]) S.cands[id]=clone(cands[id])});
+  Object.keys(S.cands).forEach(id=>{ if(!seen[id]&&!dirty[id]) delete S.cands[id] });
+  if(d.stress){
+    for(const [id,k] of [["st-sp","sp"],["st-delay","delay"]]){
+      if(document.activeElement!==$(id)){ S.stress[k]=d.stress[k]; $(id).value=d.stress[k] }
+    }
+  }
+  if(!S.cands[S.sel]) S.sel=ordered()[0]||null;
+  renderCompare(); renderTabs();
+  if(sig()!==editorSig && !$("editor").contains(document.activeElement)) renderEditor();
+  else renderResult();
+  if(!Object.keys(dirty).length) setStatus(hostSynced?"저장됨 · 로그인 계정에 동기화돼요 (어느 기기에서나 같은 내용)":"저장됨 · 이 브라우저에만 보관 (로그인하면 기기 간 동기화)");
+}
+function touch(id,now){
+  dirty[id]=true; ver[id]=(ver[id]||0)+1; clearTimeout(timers[id]);
+  setStatus("저장 중…");
+  timers[id]=setTimeout(()=>flush(id),now?0:700);
+}
+async function flush(id){
+  if(saving[id]){again[id]=true;return}
+  saving[id]=true; const v=ver[id], c=S.cands[id];
+  try{
+    if(S.mode==="db"){ if(c) await col.doc(id).set(clone(c)) } else if(S.mode==="host") postHost(); else saveLocal();
+    if(ver[id]===v) delete dirty[id];
+    setStatus(S.mode==="db"?"저장됨 · 어느 기기에서 열어도 같은 내용":S.mode==="host"&&hostSynced?"저장됨 · 로그인 계정에 동기화돼요 (어느 기기에서나 같은 내용)":"저장됨 · 이 브라우저에만 보관");
+  }catch(e){
+    if(e&&e.code==="invalid_argument"){canWrite=false;setStatus("읽기 전용으로 열려 있어 저장되지 않습니다");renderEditor()}
+    else if(e&&e.code==="quota_exceeded") setStatus("저장 공간이 가득 찼습니다. 쓰지 않는 물건을 삭제해 주세요");
+    else setStatus("저장하지 못했습니다. 잠시 뒤 다시 수정하면 재시도합니다");
+  }
+  saving[id]=false;
+  if(again[id]){again[id]=false;flush(id)}
+}
+
+/* 이벤트 */
+$("editor").addEventListener("input",e=>{
+  const t=e.target, c=S.cands[S.sel]; if(!c) return;
+  if(t.id==="site-only"){S.siteOnly=t.checked;renderEditor();return}
+  if(t.dataset.k){c.n=c.n||{};c.n[t.dataset.k]=t.value}
+  else if(t.dataset.t){c[t.dataset.t]=t.value}
+  else return;
+  refresh(); touch(S.sel);
+});
+$("editor").addEventListener("click",e=>{
+  const b=e.target.closest("button"), c=S.cands[S.sel]; if(!b||!c) return;
+  if(b.dataset.stage!=null){c.stage=+b.dataset.stage;b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));refresh();touch(S.sel)}
+  else if(b.dataset.seg){
+    const key=b.dataset.seg==="kill"?"kill":"chk", id=b.dataset.id, raw=b.dataset.v, val=key==="kill"?raw:+raw;
+    c[key]=c[key]||{};
+    if(String(c[key][id])===raw) delete c[key][id]; else c[key][id]=val;
+    b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(c[key][id])===x.dataset.v));
+    refresh();touch(S.sel);
+  }
+  else if(b.id==="del"){$("del-wrap").innerHTML=`<span class="small">삭제하면 되돌릴 수 없습니다.</span> <button type="button" class="btn danger" id="del-yes">삭제</button> <button type="button" class="btn" id="del-no">취소</button>`}
+  else if(b.id==="del-no"){$("del-wrap").innerHTML=`<button type="button" class="btn danger" id="del">이 물건 삭제</button>`}
+  else if(b.id==="del-yes"){removeCand(S.sel)}
+});
+async function removeCand(id){
+  delete S.cands[id]; delete dirty[id]; clearTimeout(timers[id]);
+  S.sel=ordered()[0]||null; renderAll();
+  try{ if(S.mode==="db") await col.doc(id).delete(); else if(S.mode==="host") postHost(); else saveLocal(); setStatus("삭제됨") }
+  catch(e){ setStatus("삭제하지 못했습니다") }
+}
+$("tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(!b)return;S.sel=b.dataset.id;renderTabs();renderEditor()});
+$("add").addEventListener("click",()=>{
+  if(!canWrite) return;
+  const id=S.mode==="db"?col.doc().id:"c"+Date.now().toString(36);
+  S.cands[id]={name:"",type:TYPES[0],stage:null,n:{ratio:"100"},kill:{},chk:{},memo:"",compName:"",created:Date.now()};
+  S.sel=id; renderAll(); touch(id,true);
+  const f=$("f-name"); f&&f.focus();
+});
+$("sort").addEventListener("change",e=>{S.sort=e.target.value;renderCompare()});
+for(const [id,k] of [["st-sp","sp"],["st-delay","delay"]]){
+  $(id).addEventListener("input",e=>{S.stress[k]=e.target.value;if(S.mode==="host")postHost();else{try{localStorage.setItem("rdv-stress",JSON.stringify(S.stress))}catch(_){}}renderCompare();renderResult()});
+}
+function renderAll(){renderCompare();renderTabs();renderEditor()}
+
+/* 시작 */
+async function start(){
+  if(HOST){
+    document.documentElement.classList.add("host");
+    renderAll();
+    window.addEventListener("message",e=>{
+      if(e.source!==window.parent) return;
+      if(e.origin!==location.origin && location.origin!=="null") return;
+      if(e.data&&e.data.type==="rdv-init") applyHost(e.data);
+    });
+    if(window.ResizeObserver){
+      const wrap=document.querySelector(".wrap"), sendH=()=>{
+        const h=Math.ceil(wrap.getBoundingClientRect().height);
+        if(h>50) window.parent.postMessage({type:"rdv-height",h:h+4},TO);
+      };
+      new ResizeObserver(sendH).observe(wrap); sendH();
+    }
+    window.parent.postMessage({type:"rdv-ready"},TO);
+    return;
+  }
+  try{const s=JSON.parse(localStorage.getItem("rdv-stress")||"null");if(s)S.stress=s}catch(e){}
+  $("st-sp").value=S.stress.sp; $("st-delay").value=S.stress.delay;
+  renderAll();
+  let db=null;
+  try{ db=window.claude&&window.claude.use?await window.claude.use("db"):null }catch(e){ db=null }
+  if(!db){
+    S.mode="local";
+    try{S.cands=JSON.parse(localStorage.getItem("rdv-cands")||"{}")||{}}catch(e){S.cands={}}
+    S.sel=ordered()[0]||null; renderAll();
+    setStatus("이 브라우저에만 저장됩니다");
+    return;
+  }
+  col=db.collection("candidates");
+  const slow=setTimeout(()=>{ if(S.mode==="loading") setStatus("저장된 데이터에 아직 연결되지 않았습니다. 연결되면 자동으로 표시됩니다") },10000);
+  col.onSnapshot(snap=>{
+    if(!snap.metadata.fromCache) clearTimeout(slow);
+    S.mode="db";
+    const seen={};
+    snap.docs.forEach(d=>{seen[d.id]=1; if(!dirty[d.id]) S.cands[d.id]=clone(d.data())});
+    Object.keys(S.cands).forEach(id=>{ if(!seen[id]&&!dirty[id]) delete S.cands[id] });
+    if(!S.cands[S.sel]) S.sel=ordered()[0]||null;
+    renderCompare(); renderTabs();
+    if(sig()!==editorSig && !$("editor").contains(document.activeElement)) renderEditor();
+    if(!Object.keys(dirty).length) setStatus(snap.metadata.fromCache?"이전 방문 때 저장된 내용 표시 중":"저장됨 · 어느 기기에서 열어도 같은 내용");
+  },err=>{
+    clearTimeout(slow);
+    if(S.mode==="loading"){S.mode="local";renderAll()}
+    setStatus("저장소에 연결할 수 없습니다. 지금 입력하는 내용은 보관되지 않을 수 있습니다");
+  });
+}
+start();
+</script>
+
+</body></html>
