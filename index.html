@@ -426,8 +426,7 @@
     {id:"cat-invest",   name:"투자",     color:"var(--cat-2)"},
     {id:"cat-capability",name:"개인역량", color:"var(--cat-3)"},
     {id:"cat-read",     name:"독서",     color:"var(--cat-4)"},
-    {id:"cat-exercise", name:"운동",     color:"var(--cat-5)"},
-    {id:"cat-buycriteria", name:"투자 매수기준", color:"var(--cat-6)"}
+    {id:"cat-exercise", name:"운동",     color:"var(--cat-5)"}
   ];
   var DEFAULT_TEMPLATES = [
     {id:"rt-read", name:"매일 독서"},
@@ -540,9 +539,9 @@
   function sanitizeState(parsed){
     var def = defaultState();
     parsed.categories = parsed.categories && parsed.categories.length ? parsed.categories : def.categories;
-    if(!parsed.categories.some(function(c){ return c.id === "cat-buycriteria"; })){
-      parsed.categories.push({id:"cat-buycriteria", name:"투자 매수기준", color:"var(--cat-6)"});
-    }
+    // "투자 매수기준" 카테고리는 폐지. 이미 저장된 데이터(브라우저·클라우드)에서도 목록에서 뺀다.
+    var kept = parsed.categories.filter(function(c){ return c.id !== "cat-buycriteria"; });
+    parsed.categories = kept.length ? kept : def.categories;
     parsed.templates = parsed.templates || def.templates;
     parsed.timeCategories = parsed.timeCategories && parsed.timeCategories.length ? parsed.timeCategories : def.timeCategories;
     parsed.buyChecklists = parsed.buyChecklists || [];
