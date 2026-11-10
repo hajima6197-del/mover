@@ -770,19 +770,14 @@
 
   function renderLogin(msg, email, mode, ok){
     showRdvHost(false);
-    var signup = mode === "signup";
     document.getElementById("app").innerHTML =
-      '<div class="login-wrap"><form class="login-card" data-action="login-form" data-mode="' + (signup ? "signup" : "login") + '">' +
+      '<div class="login-wrap"><form class="login-card" data-action="login-form">' +
       '<h1 class="login-title">무버</h1>' +
-      '<p class="login-sub">' + (signup
-        ? '이메일로 가입하면 어느 기기에서나 내 루틴과 매수기준이 이어져요. 내 데이터는 나만 볼 수 있어요.'
-        : '로그인하면 어느 기기에서나 내 루틴과 매수기준이 이어져요.') + '</p>' +
+      '<p class="login-sub">로그인하면 어느 기기에서나 내 루틴과 매수기준이 이어져요.</p>' +
       '<label class="login-field"><span>이메일</span><input type="email" name="email" autocomplete="username" required value="' + escapeHtml(email || "") + '"></label>' +
-      '<label class="login-field"><span>비밀번호' + (signup ? ' (8자 이상)' : '') + '</span><input type="password" name="password" autocomplete="' + (signup ? 'new-password' : 'current-password') + '" required' + (signup ? ' minlength="8"' : '') + '></label>' +
-      (signup ? '<label class="login-field"><span>비밀번호 확인</span><input type="password" name="password2" autocomplete="new-password" required minlength="8"></label>' : '') +
+      '<label class="login-field"><span>비밀번호</span><input type="password" name="password" autocomplete="current-password" required></label>' +
       '<div class="login-msg' + (ok ? ' ok' : '') + '" role="alert">' + escapeHtml(msg || "") + '</div>' +
-      '<button type="submit" class="login-btn">' + (signup ? '회원가입' : '로그인') + '</button>' +
-      '<button type="button" class="login-switch" data-action="auth-mode" data-mode="' + (signup ? 'login' : 'signup') + '">' + (signup ? '이미 계정이 있어요 · 로그인' : '처음이신가요? 회원가입') + '</button>' +
+      '<button type="submit" class="login-btn">로그인</button>' +
       '</form></div>';
   }
 
@@ -790,8 +785,6 @@
     var m = String((err && err.message) || err);
     if(/invalid login credentials/i.test(m)) return "이메일 또는 비밀번호가 맞지 않아요.";
     if(/email not confirmed/i.test(m)) return "이메일 인증이 아직이에요. 가입할 때 받은 메일의 링크를 먼저 눌러주세요.";
-    if(/already registered|already been registered/i.test(m)) return "이미 가입된 이메일이에요. 로그인해주세요.";
-    if(/signups? not allowed|signup_disabled/i.test(m)) return "지금은 회원가입이 닫혀 있어요.";
     if(/rate limit|too many/i.test(m)) return "요청이 너무 잦아요. 잠시 뒤에 다시 시도해주세요.";
     if(/password should be|weak password/i.test(m)) return "비밀번호가 너무 쉬워요. 더 길고 복잡하게 만들어주세요.";
     if(/invalid.*email|email.*invalid|unable to validate email/i.test(m)) return "이메일 형식을 확인해주세요.";
@@ -840,18 +833,6 @@
       e.preventDefault();
       var email = f.elements.email.value.trim(), password = f.elements.password.value;
       var btn = f.querySelector(".login-btn");
-      if(f.getAttribute("data-mode") === "signup"){
-        if(password.length < 8){ renderLogin("비밀번호는 8자 이상으로 해주세요.", email, "signup"); return; }
-        if(password !== f.elements.password2.value){ renderLogin("비밀번호 확인이 일치하지 않아요.", email, "signup"); return; }
-        btn.disabled = true; btn.textContent = "가입 중...";
-        sbAuth("signup?redirect_to=" + encodeURIComponent(location.origin + location.pathname), {email:email, password:password}).then(function(j){
-          if(j && j.access_token){ writeSession(toSession(j)); startSession(); }
-          else renderLogin("인증 메일을 보냈어요. 메일의 링크를 누르면 바로 로그인돼요. (스팸함도 확인해주세요)", email, "login", true);
-        }).catch(function(err){
-          renderLogin(friendlyAuthError(err), email, "signup");
-        });
-        return;
-      }
       btn.disabled = true; btn.textContent = "로그인 중...";
       sbAuth("token?grant_type=password", {email:email, password:password}).then(function(j){
         writeSession(toSession(j));
@@ -890,7 +871,7 @@
     var p = new URLSearchParams(h);
     try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){}
     if(p.get("error") || p.get("error_description")){
-      return Promise.reject(new Error("인증 링크가 만료됐거나 이미 사용됐어요. 로그인해보시고, 안 되면 다시 가입해주세요."));
+      return Promise.reject(new Error("인증 링크가 만료됐거나 이미 사용됐어요. 로그인해주세요."));
     }
     var at = p.get("access_token"), rt = p.get("refresh_token");
     if(!at || !rt) return Promise.resolve(null);
@@ -1886,11 +1867,6 @@
         var step = 1 + Math.floor(Math.random() * (QUOTES.length - 1));
         quoteOffset += step;
         render();
-        break;
-      }
-      case "auth-mode": {
-        var emailEl = document.querySelector(".login-card input[name=email]");
-        renderLogin("", emailEl ? emailEl.value : "", t.getAttribute("data-mode"));
         break;
       }
       case "prev-month": changeMonth(-1); break;
