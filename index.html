@@ -1098,9 +1098,26 @@
       .then(function(j){ return j.data || []; });
   }
 
+  /* 실시간 현재가 (Coinbase 공개 API, 키 불필요). 지표는 일봉 마감 기준이라 하루 늦으므로 현재가만 따로 가져온다. */
+  var btcLive = null, btcLiveFetching = false, btcLiveLastAttempt = 0;
+  function fetchBtcLive(force){
+    if(btcLiveFetching) return;
+    if(!force && Date.now() - btcLiveLastAttempt < 30000) return;
+    btcLiveFetching = true; btcLiveLastAttempt = Date.now();
+    fetch("https://api.coinbase.com/v2/prices/BTC-USD/spot")
+      .then(function(r){ if(!r.ok) throw new Error("현재가 서버 오류 (" + r.status + ")"); return r.json(); })
+      .then(function(j){
+        var p = Number(j && j.data && j.data.amount);
+        if(isFinite(p) && p > 0) btcLive = {price:p, at:Date.now()};
+      })
+      .catch(function(){ /* 현재가 실패는 조용히 무시: 일봉 지표 표시는 그대로 유지 */ })
+      .then(function(){ btcLiveFetching = false; refreshBtc(); });
+  }
+
   function fetchBtcData(){
     if(btcFetching) return;
     btcFetching = true; btcError = ""; btcLastAttempt = Date.now();
+    fetchBtcLive(true);
     refreshBtc();
     var pPrice = cmGet("PriceUSD", "2010-07-18");
     var pOn = cmGet("CapMVRVCur,IssTotUSD", isoDaysAgo(430));
@@ -1134,7 +1151,13 @@
     });
   }
 
+  /* 암호화폐 탭을 보고 있는 동안 1분마다 현재가를 갱신 */
+  setInterval(function(){
+    if(state.view === "buy" && !document.hidden) fetchBtcLive(false);
+  }, 60000);
+
   function ensureBtcData(){
+    fetchBtcLive(false);
     if(btcFetching) return;
     if(btcAuto && (Date.now() - btcAuto.fetchedAt) < 6*3600*1000) return;
     if(Date.now() - btcLastAttempt < 60000) return;
@@ -1142,10 +1165,31 @@
   }
 
   /* ---- 지표 해석과 최종 판정 ---- */
+  /* 일봉 마감값에 실시간 현재가를 반영한 자동 지표값.
+     - 200주 이동평균 비율, 고점 대비 하락률: 가격만으로 계산되므로 현재가로 정확히 재계산
+     - MVRV, Puell: 온체인 일봉 지표라 실시간 값이 없어 현재가/마감가 비율로 보정한 추정치
+       (실현시가총액·채굴 발행량은 하루 안에 거의 변하지 않으므로 오차가 작다)
+     - 공포탐욕지수: 이미 당일 값이라 그대로 */
+  var BTC_LIVE_ADJUSTED = {mvrv:1, puell:1, wma200:1, dd:1};
+  function btcAutoValue(key){
+    var a = btcAuto;
+    if(!a || !a.values) return null;
+    var v = a.values[key];
+    if(v == null || !btcLive || !(a.price > 0) || !BTC_LIVE_ADJUSTED[key]) return v;
+    var k = btcLive.price / a.price;
+    if(key === "dd") return (btcLive.price / Math.max(a.ath, btcLive.price) - 1) * 100;
+    return v * k;
+  }
+  function btcSrcLabel(key, src){
+    if(src === "manual") return "직접 입력";
+    if(src !== "auto") return "";
+    if(!btcLive || !BTC_LIVE_ADJUSTED[key]) return "자동";
+    return (key === "mvrv" || key === "puell") ? "자동 · 현재가 보정(추정)" : "자동 · 현재가 반영";
+  }
   function btcValue(key){
     var m = state.btc.manual[key];
     if(m !== "" && m != null && isFinite(parseFloat(m))) return {v:parseFloat(m), src:"manual"};
-    var a = btcAuto && btcAuto.values ? btcAuto.values[key] : null;
+    var a = btcAutoValue(key);
     if(a != null && isFinite(a)) return {v:a, src:"auto"};
     return null;
   }
@@ -1730,7 +1774,13 @@
   function btcSnapHtml(){
     var a = btcAuto;
     var h = '<div class="btc-snap-main">';
-    if(a){
+    if(btcLive){
+      var hhmm = new Date(btcLive.at).toLocaleTimeString("ko-KR", {hour:"2-digit", minute:"2-digit", hour12:false});
+      h += '<span class="btc-price mono">BTC ' + usd(btcLive.price) + '</span>';
+      h += '<span class="btc-asof">현재가 ' + hhmm + ' 기준' +
+        (a ? ' · 지표 기준일 ' + escapeHtml(a.priceAsOf || "") + ' (종가 ' + usd(a.price) + ') · 역대 고점 ' + usd(a.ath)
+           : (btcFetching ? ' · 지표를 불러오는 중...' : '')) + '</span>';
+    } else if(a){
       h += '<span class="btc-price mono">BTC ' + usd(a.price) + '</span>';
       h += '<span class="btc-asof">기준일 ' + escapeHtml(a.priceAsOf || "") + ' · 역대 고점 ' + usd(a.ath) + '</span>';
     } else {
@@ -1745,12 +1795,12 @@
   function btcIndRowHtml(row){
     var ind = row.ind, e = row.e;
     var m = state.btc.manual[ind.key];
-    var autoV = btcAuto && btcAuto.values ? btcAuto.values[ind.key] : null;
+    var autoV = btcAutoValue(ind.key);
     var ph = (autoV != null && isFinite(autoV)) ? "자동 " + autoV.toFixed(ind.dec) : "값 입력";
     var h = '<div class="btc-ind" data-key="' + ind.key + '">';
     h += '<div class="btc-ind-head"><span class="btc-ind-label">' + escapeHtml(ind.label) + '</span>' + btcZoneBadge(row.zone) + '</div>';
     h += '<div class="btc-ind-body"><span class="btc-val mono">' + (e ? fmtIndValue(ind, e.v) : "—") + '</span>';
-    h += '<span class="btc-src">' + (e ? (e.src === "manual" ? "직접 입력" : "자동") : "") + '</span>';
+    h += '<span class="btc-src">' + (e ? btcSrcLabel(ind.key, e.src) : "") + '</span>';
     h += '<input type="number" step="any" class="btc-manual" data-action="btc-manual" data-key="' + ind.key + '" value="' + escapeHtml(m == null ? "" : String(m)) + '" placeholder="' + escapeHtml(ph) + '" aria-label="' + escapeHtml(ind.label) + ' 직접 입력"></div>';
     h += '<div class="btc-ind-rule">저평가 ' + ind.lowTxt + ' · 과열 ' + ind.highTxt + '</div>';
     h += '<div class="btc-ind-desc">' + escapeHtml(ind.desc) + '</div>';
@@ -1828,8 +1878,8 @@
       if(!el) return;
       el.querySelector(".btc-zone").outerHTML = btcZoneBadge(row.zone);
       el.querySelector(".btc-val").textContent = row.e ? fmtIndValue(row.ind, row.e.v) : "—";
-      el.querySelector(".btc-src").textContent = row.e ? (row.e.src === "manual" ? "직접 입력" : "자동") : "";
-      var autoV = btcAuto && btcAuto.values ? btcAuto.values[row.ind.key] : null;
+      el.querySelector(".btc-src").textContent = row.e ? btcSrcLabel(row.ind.key, row.e.src) : "";
+      var autoV = btcAutoValue(row.ind.key);
       el.querySelector(".btc-manual").placeholder = (autoV != null && isFinite(autoV)) ? "자동 " + autoV.toFixed(row.ind.dec) : "값 입력";
     });
     var sum = root.querySelector(".btc-summary");
