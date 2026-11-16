@@ -486,7 +486,9 @@
       {id:"act-read", name:"독서"},
       {id:"act-market", name:"시황분석"},
       {id:"act-field", name:"임장"},
-      {id:"act-lecture", name:"강의/스터디"}
+      {id:"act-lecture", name:"강의/스터디"},
+      {id:"act-plan", name:"계획/기록"},
+      {id:"act-realestate", name:"부동산"}
     ]},
     {id:"tc-family", name:"가족", color:"var(--tc-2)", activities:[
       {id:"act-parents", name:"부모님"},
@@ -514,8 +516,7 @@
     ]},
     {id:"tc-etc", name:"기타", color:"var(--tc-6)", activities:[
       {id:"act-move", name:"이동"},
-      {id:"act-house", name:"집안일"},
-      {id:"act-plan", name:"계획/기록"}
+      {id:"act-house", name:"집안일"}
     ]}
   ];
 
@@ -541,8 +542,32 @@
       buyChecklists: [],
       btc: newBtc(),
       redev: normalizeRedev(null),
+      migrations: {tcInvest1:true},
       days: {}
     };
+  }
+
+  // 한 번만 실행되는 데이터 이전. 이미 저장된 시간표 분류에도 "계획/기록"을 투자로 옮기고 "부동산"을 추가한다.
+  // 활동 id는 그대로 두므로 이전에 기록한 시간표·통계는 유지된다. 표시는 사용자가 이후에 지우거나 옮겨도 다시 되돌리지 않는다.
+  var migratedNow = false;
+  function migrateTimeCategories(parsed){
+    var m = parsed.migrations = (parsed.migrations && typeof parsed.migrations === "object") ? parsed.migrations : {};
+    if(m.tcInvest1) return;
+    m.tcInvest1 = true;
+    migratedNow = true;
+    var invest = parsed.timeCategories.find(function(c){ return c.id === "tc-invest"; });
+    if(!invest) return;
+    invest.activities = invest.activities || [];
+    var moved = null;
+    parsed.timeCategories.forEach(function(c){
+      if(c === invest) return;
+      c.activities = (c.activities || []).filter(function(a){
+        if(a.id === "act-plan"){ moved = a; return false; }
+        return true;
+      });
+    });
+    if(moved && !invest.activities.some(function(a){ return a.id === "act-plan"; })) invest.activities.push(moved);
+    if(!invest.activities.some(function(a){ return a.name === "부동산"; })) invest.activities.push({id:"act-realestate", name:"부동산"});
   }
 
   /* 재개발 비교평가표(redevelopment.html)가 보내오는 데이터. 계정 동기화 대상에 포함된다. */
@@ -569,6 +594,7 @@
     parsed.buyChecklists = parsed.buyChecklists || [];
     parsed.btc = normalizeBtc(parsed.btc);
     parsed.redev = normalizeRedev(parsed.redev);
+    migrateTimeCategories(parsed);
     parsed.days = parsed.days || {};
     if(!parsed.selectedDate) parsed.selectedDate = def.selectedDate;
     if(typeof parsed.year !== "number") parsed.year = def.year;
@@ -605,7 +631,7 @@
   }
 
   function dataPart(){
-    return {categories:state.categories, templates:state.templates, timeCategories:state.timeCategories, buyChecklists:state.buyChecklists, btc:state.btc, redev:state.redev, days:state.days};
+    return {categories:state.categories, templates:state.templates, timeCategories:state.timeCategories, buyChecklists:state.buyChecklists, btc:state.btc, redev:state.redev, migrations:state.migrations, days:state.days};
   }
 
   function setCloudStatus(s){
@@ -693,9 +719,12 @@
   function adoptRemote(data){
     var merged = Object.assign({}, data);
     UI_FIELDS.forEach(function(k){ merged[k] = state[k]; });
+    migratedNow = false;
     state = sanitizeState(merged);
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
-    lastPushedJson = JSON.stringify(dataPart());
+    // 서버 데이터에 이전(마이그레이션)이 새로 적용됐다면 빈 값으로 두어 바로 서버에도 저장되게 한다.
+    lastPushedJson = migratedNow ? "" : JSON.stringify(dataPart());
+    migratedNow = false;
     sendRdv();
   }
 
@@ -709,6 +738,7 @@
       }
       cloudReady = true;
       if(!(rows && rows.length)) doPush();
+      else if(!lastPushedJson) schedulePush();
     });
   }
 
