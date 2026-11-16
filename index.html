@@ -3153,13 +3153,17 @@
     var bg = (root.getPropertyValue("--bg") || "").trim() || getComputedStyle(document.body).backgroundColor || "#ffffff";
     var nodes = [document.getElementById("app")];
     if(state.view === "redev" && rdvFrame && rdvFrame.contentDocument && rdvFrame.contentDocument.documentElement) nodes.push(rdvFrame.contentDocument.documentElement);
+    // 화면은 .app이 가운데 정렬(margin:0 auto)이라 넓은 창일수록 왼쪽 여백이 크다. 이 여백까지 복제하면 내용이 밀려 오른쪽이 잘리므로,
+    // 찍을 때는 여백을 0으로 둔다. 가로 크기는 넘쳐 나온 내용까지 포함해서 잡는다.
+    var sizeOf = function(n){ return {w:Math.ceil(Math.max(n.scrollWidth, n.offsetWidth)), h:Math.ceil(Math.max(n.scrollHeight, n.offsetHeight))}; };
     var wMax = 0, hSum = 0;
-    nodes.forEach(function(n){ wMax = Math.max(wMax, n.scrollWidth); hSum += n.scrollHeight; });
+    nodes.forEach(function(n){ var z = sizeOf(n); wMax = Math.max(wMax, z.w); hSum += z.h; });
     var ratio = Math.max(1, Math.min(2, 15000 / Math.max(wMax, hSum)));
     // 웹폰트 내장(skipFonts 끔)은 매번 8초가 걸리는데 실제로는 아무 폰트도 담지 못해서(시험 결과 0KB) 켜지 않는다. 글꼴은 기기의 한글 글꼴로 대신 그려진다.
     var run = function(lib){
       return Promise.all(nodes.map(function(n){
-        return lib.toCanvas(n, {backgroundColor:bg, pixelRatio:ratio, width:n.scrollWidth, height:n.scrollHeight, filter:shotFilter, skipFonts:true});
+        var z = sizeOf(n);
+        return lib.toCanvas(n, {backgroundColor:bg, pixelRatio:ratio, width:z.w, height:z.h, style:{margin:"0", maxWidth:"none"}, filter:shotFilter, skipFonts:true});
       }));
     };
     var wait = new Promise(function(r){ setTimeout(r, 60); }); // 버튼 문구가 바뀐 뒤 그리도록 한 박자 쉰다
