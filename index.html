@@ -492,7 +492,8 @@
       {id:"act-field", name:"임장"},
       {id:"act-lecture", name:"강의/스터디"},
       {id:"act-plan", name:"계획/기록"},
-      {id:"act-realestate", name:"부동산"}
+      {id:"act-realestate", name:"부동산"},
+      {id:"act-crypto", name:"암호화폐"}
     ]},
     {id:"tc-family", name:"가족", color:"var(--tc-2)", activities:[
       {id:"act-parents", name:"부모님"},
@@ -546,9 +547,21 @@
       buyChecklists: [],
       btc: newBtc(),
       redev: normalizeRedev(null),
-      migrations: {tcInvest1:true, split30:true},
+      migrations: {tcInvest1:true, split30:true, tcCrypto1:true},
       days: {}
     };
+  }
+
+  // 한 번만 실행: 저장된 시간표 분류의 "투자"에 "암호화폐" 활동을 추가한다 (이미 있으면 그대로, 이후에 지워도 되살리지 않는다).
+  function migrateCryptoActivity(parsed){
+    var m = parsed.migrations;
+    if(m.tcCrypto1) return;
+    m.tcCrypto1 = true;
+    migratedNow = true;
+    var invest = parsed.timeCategories.find(function(c){ return c.id === "tc-invest"; });
+    if(!invest) return;
+    invest.activities = invest.activities || [];
+    if(!invest.activities.some(function(a){ return a.name === "암호화폐"; })) invest.activities.push({id:"act-crypto", name:"암호화폐"});
   }
 
   // 한 번만 실행: 시간표가 30분 단위가 되면서, 예전에 1시간 단위로 기록한 칸은 :00과 :30 두 칸에 같은 활동으로 채운다.
@@ -618,6 +631,7 @@
     migrateTimeCategories(parsed);
     parsed.days = parsed.days || {};
     migrateHalfHours(parsed);
+    migrateCryptoActivity(parsed);
     if(!parsed.selectedDate) parsed.selectedDate = def.selectedDate;
     if(typeof parsed.year !== "number") parsed.year = def.year;
     if(typeof parsed.month !== "number") parsed.month = def.month;
