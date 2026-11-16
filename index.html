@@ -392,7 +392,52 @@
   .btc-err{flex-basis:100%;font-size:12px;color:var(--danger);}
   .icon-btn:disabled{opacity:.6;cursor:default;}
   .btc-summary{font-weight:400;font-size:12px;color:var(--ink-muted);}
-  .btc-grid{display:flex;flex-direction:column;gap:10px;}
+  .btc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+  @media (max-width:820px){ .btc-grid{grid-template-columns:minmax(0,1fr);} }
+
+  /* ---- BTC 차트 ---- */
+  .chart-top-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+  .chart-top-head .buy-section-title{margin:0;}
+  .chart-range{display:flex;gap:4px;}
+  .range-btn{border:1px solid var(--border);background:var(--surface);color:var(--ink-muted);border-radius:7px;padding:4px 11px;font-size:12px;font-weight:600;cursor:pointer;}
+  .range-btn:hover{color:var(--ink);background:var(--surface-2);}
+  .range-btn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+  .chart-panel{border:1px solid var(--border-soft);border-radius:10px;background:var(--bg);padding:12px 14px 10px;margin-bottom:12px;}
+  .chart-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;}
+  .chart-title{font-size:13px;font-weight:600;color:var(--ink);}
+  .chart-title em{font-style:normal;font-weight:400;font-size:11.5px;color:var(--ink-faint);}
+  .chart-legend{font-size:11.5px;color:var(--ink-muted);display:flex;align-items:center;gap:6px;}
+  .chart-legend .lg{display:inline-block;width:16px;height:0;border-top:2px solid var(--accent);margin-left:6px;}
+  .chart-legend .lg.s-ma{border-top:2px dashed var(--ink-muted);}
+  .chart-note{margin-top:6px;font-size:11px;color:var(--ink-faint);line-height:1.55;}
+  .chart-empty{padding:26px 8px;text-align:center;font-size:12px;color:var(--ink-faint);}
+  .btc-chart{margin:2px 0 4px;}
+  .chart-plot{position:relative;height:150px;border-bottom:1px solid var(--border);touch-action:pan-y;}
+  .btc-ind .chart-plot{height:110px;}
+  .chart-plot svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
+  .ch-line{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke;}
+  .ch-line.s-ma{stroke:var(--ink-muted);stroke-width:1.5;stroke-dasharray:5 4;}
+  .ch-area{fill:var(--accent);fill-opacity:.14;stroke:none;}
+  .ch-ref{stroke:var(--ink-faint);stroke-width:1;stroke-dasharray:3 4;vector-effect:non-scaling-stroke;opacity:.7;}
+  .zone-good{fill:var(--success);fill-opacity:.11;}
+  .zone-hot{fill:var(--danger);fill-opacity:.1;}
+  .ch-th{position:absolute;left:4px;transform:translateY(-100%);font-size:10px;line-height:1.2;color:var(--ink-muted);background:color-mix(in srgb, var(--bg) 78%, transparent);padding:0 3px;border-radius:3px;pointer-events:none;white-space:nowrap;}
+  .ch-th.good{color:var(--success);transform:none;}
+  .ch-th.hot{color:var(--danger);transform:none;}
+  .ch-max,.ch-min{position:absolute;right:3px;font-size:10px;color:var(--ink-faint);pointer-events:none;background:color-mix(in srgb, var(--bg) 78%, transparent);padding:0 3px;border-radius:3px;}
+  .ch-max{top:1px;}
+  .ch-min{bottom:1px;}
+  .ch-dot{position:absolute;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--bg);pointer-events:none;}
+  .ch-dot.zone-good{background:var(--success);}
+  .ch-dot.zone-hot{background:var(--danger);}
+  .ch-cross{position:absolute;top:0;bottom:0;width:0;border-left:1px solid var(--ink-muted);opacity:0;pointer-events:none;}
+  .ch-tip{position:absolute;top:4px;display:none;flex-direction:column;gap:1px;min-width:90px;padding:5px 8px;border:1px solid var(--border);border-radius:7px;background:var(--surface);box-shadow:var(--shadow);font-size:11.5px;color:var(--ink);pointer-events:none;transform:translateX(8px);z-index:2;}
+  .ch-tip.left{transform:translateX(calc(-100% - 8px));}
+  .ch-tip b{font-weight:600;font-size:11px;color:var(--ink-muted);}
+  .btc-chart.hover .ch-cross{opacity:.7;}
+  .btc-chart.hover .ch-tip{display:flex;}
+  .chart-x{display:flex;justify-content:space-between;margin-top:3px;font-size:10.5px;color:var(--ink-faint);}
+  .btc-ind-chart{margin:8px 0 2px;}
   .btc-ind{border:1px solid var(--border-soft);border-radius:10px;padding:12px 14px;background:var(--bg);}
   .btc-ind-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}
   .btc-ind-label{font-weight:600;font-size:13.5px;}
@@ -1208,7 +1253,7 @@
   }
 
   /* ---- 자동 데이터 (Coin Metrics 커뮤니티 API + alternative.me, 둘 다 무료·키 불필요) ---- */
-  var BTC_CACHE_KEY = "mover-btc-auto-v2"; // v2: 펀딩비·7일/30일 가격 추가 (옛 캐시는 이 값들이 없어 버린다)
+  var BTC_CACHE_KEY = "mover-btc-auto-v3"; // v3: 차트용 과거 이력(hist) 추가 (옛 캐시는 이 값이 없어 버린다)
   var CM_URL = "https://community-api.coinmetrics.io/v4/timeseries/asset-metrics";
   var btcAuto = null, btcFetching = false, btcError = "", btcLastAttempt = 0;
   try{ btcAuto = JSON.parse(localStorage.getItem(BTC_CACHE_KEY) || "null"); }catch(e){ btcAuto = null; }
@@ -1233,7 +1278,7 @@
         if(isFinite(p) && p > 0) btcLive = {price:p, at:Date.now()};
       })
       .catch(function(){ /* 현재가 실패는 조용히 무시: 일봉 지표 표시는 그대로 유지 */ })
-      .then(function(){ btcLiveFetching = false; refreshBtc(); });
+      .then(function(){ btcLiveFetching = false; refreshBtc(true); });
   }
 
   function fetchFng(){
@@ -1243,24 +1288,88 @@
       .catch(function(){ return null; });
   }
 
-  /* 펀딩비: 최근 7일(8시간 간격 21회) 평균을 연환산 %로. Bybit 우선, 실패하면 OKX. 둘 다 키 불필요한 공개 API. */
+  // 차트용: 공포·탐욕 지수 과거 이력 (날짜 -> 값). 실패하면 null
+  function fetchFngSeries(){
+    return fetch("https://api.alternative.me/fng/?limit=" + BTC_HIST_DAYS)
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        var list = (j && j.data) || [], byDate = {};
+        list.forEach(function(x){ byDate[new Date(Number(x.timestamp) * 1000).toISOString().slice(0, 10)] = Number(x.value); });
+        return list.length ? {latest:Number(list[0].value), byDate:byDate} : null;
+      })
+      .catch(function(){ return null; });
+  }
+
+  /* 펀딩비: 최근 7일(8시간 간격 21회) 평균을 연환산 %로. Bybit 우선, 실패하면 OKX. 둘 다 키 불필요한 공개 API.
+     차트용으로 일별 평균의 7일 이동평균 이력도 함께 만든다 (지표 값과 같은 정의). */
   function annualizedFunding(rates){
     rates = rates.filter(function(x){ return isFinite(x); });
     if(rates.length < 15) return null;
     return rates.reduce(function(a, b){ return a + b; }, 0) / rates.length * 3 * 365 * 100;
   }
+  function buildFunding(rates){ // rates: [{t:ms, r:8시간 요율}] 최신순
+    rates = rates.filter(function(x){ return isFinite(x.r) && isFinite(x.t); });
+    var value = annualizedFunding(rates.slice(0, 21).map(function(x){ return x.r; }));
+    if(value == null) return null;
+    var byDay = {};
+    rates.forEach(function(x){ var k = new Date(x.t).toISOString().slice(0, 10); (byDay[k] = byDay[k] || []).push(x.r); });
+    var days = Object.keys(byDay).sort().slice(1); // 첫날은 일부 시각만 있을 수 있어 뺀다
+    var daily = days.map(function(k){ return {d:k, v:byDay[k].reduce(function(a, b){ return a + b; }, 0) / byDay[k].length * 3 * 365 * 100}; });
+    var series = [];
+    daily.forEach(function(x, i){
+      if(i < 6) return;
+      var s = 0; for(var j = i - 6; j <= i; j++) s += daily[j].v;
+      series.push({d:x.d, v:s / 7});
+    });
+    return {value:value, series:series};
+  }
   function fetchFunding(){
-    return fetch("https://api.bybit.com/v5/market/funding/history?category=linear&symbol=BTCUSDT&limit=21")
+    return fetch("https://api.bybit.com/v5/market/funding/history?category=linear&symbol=BTCUSDT&limit=200")
       .then(function(r){ return r.json(); })
-      .then(function(j){ return annualizedFunding(j.result.list.map(function(x){ return Number(x.fundingRate); })); })
+      .then(function(j){ return buildFunding(j.result.list.map(function(x){ return {t:Number(x.fundingRateTimestamp), r:Number(x.fundingRate)}; })); })
       .catch(function(){ return null; })
       .then(function(v){
-        if(v != null) return v;
-        return fetch("https://www.okx.com/api/v5/public/funding-rate-history?instId=BTC-USDT-SWAP&limit=21")
+        if(v) return v;
+        return fetch("https://www.okx.com/api/v5/public/funding-rate-history?instId=BTC-USDT-SWAP&limit=100")
           .then(function(r){ return r.json(); })
-          .then(function(j){ return annualizedFunding(j.data.map(function(x){ return Number(x.fundingRate); })); })
+          .then(function(j){ return buildFunding(j.data.map(function(x){ return {t:Number(x.fundingTime), r:Number(x.fundingRate)}; })); })
           .catch(function(){ return null; });
       });
+  }
+
+  /* 차트용 일별 이력 (최근 4년). 모든 배열이 날짜 배열 d와 같은 길이이고 없는 날은 null.
+     wma = 200주(1400일) 평균선, wma200 = 가격/평균선, dd = 역대 고점 대비 %, puell = 발행수익/365일 평균 */
+  var BTC_HIST_DAYS = 1461;
+  function buildBtcHist(rows, prices, on, fngS, fundS){
+    var n = prices.length, N = Math.min(BTC_HIST_DAYS, n), s = n - N;
+    var pre = [0], runMax = [], mx = 0;
+    prices.forEach(function(p, i){ pre.push(pre[i] + p); mx = Math.max(mx, p); runMax.push(mx); });
+    var mvrvBy = {}, issD = [], issV = [], issIdx = {};
+    on.forEach(function(r){
+      var d = r.time.slice(0, 10);
+      if(r.CapMVRVCur != null) mvrvBy[d] = Number(r.CapMVRVCur);
+      if(r.IssTotUSD != null){ issIdx[d] = issV.length; issD.push(d); issV.push(Number(r.IssTotUSD)); }
+    });
+    var issPre = [0];
+    issV.forEach(function(v, i){ issPre.push(issPre[i] + v); });
+    var fundBy = {};
+    if(fundS) fundS.series.forEach(function(x){ fundBy[x.d] = x.v; });
+    var h = {d:[], price:[], wma:[], wma200:[], dd:[], mvrv:[], puell:[], fng:[], fund7:[]};
+    var r3 = function(x){ return x == null ? null : Math.round(x * 1000) / 1000; };
+    for(var i = s; i < n; i++){
+      var d = rows[i].time.slice(0, 10), mean = i >= 1399 ? (pre[i + 1] - pre[i - 1399]) / 1400 : null;
+      var ix = issIdx[d], pu = (ix != null && ix >= 364) ? issV[ix] / ((issPre[ix + 1] - issPre[ix - 364]) / 365) : null;
+      h.d.push(d);
+      h.price.push(Math.round(prices[i]));
+      h.wma.push(mean == null ? null : Math.round(mean));
+      h.wma200.push(mean == null ? null : r3(prices[i] / mean));
+      h.dd.push(r3((prices[i] / runMax[i] - 1) * 100));
+      h.mvrv.push(mvrvBy[d] != null ? r3(mvrvBy[d]) : null);
+      h.puell.push(r3(pu));
+      h.fng.push(fngS && fngS.byDate[d] != null ? fngS.byDate[d] : null);
+      h.fund7.push(fundBy[d] != null ? r3(fundBy[d]) : null);
+    }
+    return h;
   }
 
   function fetchBtcData(){
@@ -1269,8 +1378,8 @@
     fetchBtcLive(true);
     refreshBtc();
     var pPrice = cmGet("PriceUSD", "2010-07-18");
-    var pOn = cmGet("CapMVRVCur,IssTotUSD", isoDaysAgo(430));
-    var pFng = fetchFng();
+    var pOn = cmGet("CapMVRVCur,IssTotUSD", isoDaysAgo(BTC_HIST_DAYS + 380));
+    var pFng = fetchFngSeries();
     var pFund = fetchFunding();
     btcQuickAt = Date.now();
     Promise.all([pPrice, pOn, pFng, pFund]).then(function(res){
@@ -1286,9 +1395,11 @@
       var iss = on.filter(function(r){ return r.IssTotUSD != null; }).map(function(r){ return Number(r.IssTotUSD); });
       var i365 = iss.slice(-365);
       var puell = i365.length >= 300 ? iss[iss.length - 1] / (i365.reduce(function(a, b){ return a + b; }, 0) / i365.length) : null;
+      var fngS = res[2], fundS = res[3];
       btcAuto = {
-        values:{mvrv:mvrv, wma200:last / wma, puell:puell, fng:res[2], dd:(last / ath - 1) * 100, fund:res[3]},
-        price:last, ath:ath, p7:prices[prices.length - 8], p30:prices[prices.length - 31], priceAsOf:rows[rows.length - 1].time.slice(0, 10), fetchedAt:Date.now()
+        values:{mvrv:mvrv, wma200:last / wma, puell:puell, fng:fngS ? fngS.latest : null, dd:(last / ath - 1) * 100, fund:fundS ? fundS.value : null},
+        price:last, ath:ath, p7:prices[prices.length - 8], p30:prices[prices.length - 31], priceAsOf:rows[rows.length - 1].time.slice(0, 10), fetchedAt:Date.now(),
+        hist:buildBtcHist(rows, prices, on, fngS, fundS)
       };
       try{ localStorage.setItem(BTC_CACHE_KEY, JSON.stringify(btcAuto)); }catch(e){}
     }).catch(function(e){
@@ -1352,7 +1463,7 @@
     Promise.all([fetchFng(), fetchFunding()]).then(function(r){
       if(!btcAuto || !btcAuto.values) return;
       if(r[0] != null) btcAuto.values.fng = r[0];
-      if(r[1] != null) btcAuto.values.fund = r[1];
+      if(r[1] != null) btcAuto.values.fund = r[1].value;
       try{ localStorage.setItem(BTC_CACHE_KEY, JSON.stringify(btcAuto)); }catch(e){}
       refreshBtc(true);
     });
@@ -2005,6 +2116,170 @@
     return "저평가 " + d.counts.good + " · 중립 " + d.counts.mid + " · 과열 " + d.counts.hot + "  (지표 " + d.known + "/" + BTC_INDICATORS.length + ")";
   }
 
+  /* ---------------- BTC 차트 (외부 라이브러리 없이 SVG) ----------------
+     선은 SVG(가로세로 비율을 늘려 그림, 선 굵기는 고정), 글자·점·십자선·툴팁은 HTML로 얹어서 어떤 폭에서도 글자가 늘어나지 않게 한다. */
+  var BTC_RANGES = [[183,"6개월"], [365,"1년"], [1095,"3년"], [1461,"4년"]];
+  var btcRange = 365;
+  try{
+    var _savedRange = Number(localStorage.getItem("mover-btc-range"));
+    if(BTC_RANGES.some(function(x){ return x[0] === _savedRange; })) btcRange = _savedRange;
+  }catch(e){}
+  var btcCharts = {}, btcChartPaintAt = 0, btcChartHover = false;
+
+  // 현재 기간의 일별 이력. trim이면 앞쪽 빈 값을 잘라낸다 (펀딩비처럼 이력이 짧은 지표용)
+  function histRange(key, trim){
+    var h = btcAuto && btcAuto.hist;
+    if(!h || !h[key]) return null;
+    var s = Math.max(0, h.d.length - btcRange), d = h.d.slice(s), v = h[key].slice(s);
+    if(trim){ var a = 0; while(a < v.length && v[a] == null) a++; d = d.slice(a); v = v.slice(a); }
+    return {d:d, v:v};
+  }
+  function chartEmptyHtml(){
+    return '<div class="chart-empty">' + (btcFetching ? "차트 데이터를 불러오는 중..." : "차트 데이터가 아직 없어요. 위의 지표 새로고침을 눌러보세요.") + '</div>';
+  }
+
+  // o: {id, title, log, low, high, fmt, zoneOf, marks:[{v,label}], yMin, yMax, step, area}
+  function lineChart(dates, series, o){
+    var n = dates.length;
+    if(n < 2) return chartEmptyHtml();
+    var tf = o.log ? Math.log : function(x){ return x; };
+    var ok = function(x){ return x != null && isFinite(x) && (!o.log || x > 0); };
+    var dLo = Infinity, dHi = -Infinity;
+    series.forEach(function(s){ s.v.forEach(function(x){ if(ok(x)){ var t = tf(x); if(t < dLo) dLo = t; if(t > dHi) dHi = t; } }); });
+    if(!isFinite(dLo)) return chartEmptyHtml();
+    var lo = dLo, hi = dHi, span = (dHi - dLo) || 1;
+    // 기준선이 데이터 범위에서 너무 멀면 축에 넣지 않는다 (그래프가 납작해지는 걸 막는다). 구간 색칠은 아래에서 잘라서 그린다.
+    [o.low, o.high].forEach(function(x){
+      if(x == null || (o.log && x <= 0)) return;
+      var t = tf(x);
+      if(t >= dLo - 0.6 * span && t <= dHi + 0.6 * span){ if(t < lo) lo = t; if(t > hi) hi = t; }
+    });
+    if(o.yMin != null) lo = tf(o.yMin);
+    if(o.yMax != null) hi = tf(o.yMax);
+    else { var pad = (hi - lo || 1) * 0.08; lo -= pad; hi += pad; }
+    var Y = function(x){ return 100 - (tf(x) - lo) / (hi - lo) * 100; };
+    var clampY = function(y){ return Math.max(0, Math.min(100, y)); };
+    var X = function(i){ return i / (n - 1) * 1000; };
+    var f2 = function(x){ return Math.round(x * 100) / 100; };
+
+    var svg = '<svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">';
+    if(o.low != null && ok(o.low)){ var yl = clampY(Y(o.low)); if(yl < 100) svg += '<rect class="zone-good" x="0" y="' + f2(yl) + '" width="1000" height="' + f2(100 - yl) + '"/>'; }
+    if(o.high != null && ok(o.high)){ var yh = clampY(Y(o.high)); if(yh > 0) svg += '<rect class="zone-hot" x="0" y="0" width="1000" height="' + f2(yh) + '"/>'; }
+    var lines = [];
+    if(o.low != null && ok(o.low)){ var a1 = Y(o.low); if(a1 > 0 && a1 < 100) lines.push(a1); }
+    if(o.high != null && ok(o.high)){ var a2 = Y(o.high); if(a2 > 0 && a2 < 100) lines.push(a2); }
+    (o.marks || []).forEach(function(m){ var a3 = Y(m.v); if(a3 > 0 && a3 < 100) lines.push(a3); });
+    lines.forEach(function(y){ svg += '<line class="ch-ref" x1="0" x2="1000" y1="' + f2(y) + '" y2="' + f2(y) + '"/>'; });
+
+    var lastPt = null;
+    series.forEach(function(s, si){
+      var d = "", prevY = null, started = false, firstX = null, lastX = null;
+      s.v.forEach(function(x, i){
+        if(!ok(x)){ started = false; return; }
+        var px = f2(X(i)), py = f2(Y(x));
+        if(!started){ d += "M" + px + " " + py; started = true; if(firstX == null) firstX = px; }
+        else if(o.step) d += "L" + px + " " + prevY + "L" + px + " " + py;
+        else d += "L" + px + " " + py;
+        prevY = py; lastX = px;
+        if(si === 0) lastPt = {i:i, x:x, px:px, py:py};
+      });
+      if(o.area && si === 0 && firstX != null) svg += '<path class="ch-area" d="' + d + 'L' + lastX + ' 100L' + firstX + ' 100Z"/>';
+      svg += '<path class="ch-line ' + s.cls + '" d="' + d + '"/>';
+    });
+    svg += '</svg>';
+
+    var html = '<div class="chart-plot">' + svg;
+    if(o.low != null && ok(o.low)){ var tl = Y(o.low); if(tl > 3 && tl < 97) html += '<span class="ch-th good" style="top:' + f2(tl) + '%">저평가 ' + o.fmt(o.low) + ' 이하</span>'; }
+    if(o.high != null && ok(o.high)){ var th = Y(o.high); if(th > 3 && th < 97) html += '<span class="ch-th hot" style="top:' + f2(th) + '%">과열 ' + o.fmt(o.high) + ' 이상</span>'; }
+    (o.marks || []).forEach(function(m){ var tm = Y(m.v); if(tm > 3 && tm < 97) html += '<span class="ch-th" style="top:' + f2(tm) + '%">' + escapeHtml(m.label) + '</span>'; });
+    var all = []; series[0].v.forEach(function(x){ if(ok(x)) all.push(x); });
+    var vMin = Math.min.apply(null, all), vMax = Math.max.apply(null, all);
+    html += '<span class="ch-max">' + o.fmt(vMax) + '</span><span class="ch-min">' + o.fmt(vMin) + '</span>';
+    if(lastPt){
+      var zone = o.zoneOf ? o.zoneOf(lastPt.x) : "";
+      html += '<i class="ch-dot ' + (zone ? 'zone-' + zone : '') + '" style="left:' + f2(lastPt.px / 10) + '%;top:' + f2(lastPt.py) + '%"></i>';
+    }
+    html += '<i class="ch-cross"></i><div class="ch-tip"></div></div>';
+    html += '<div class="chart-x"><span>' + escapeHtml(dates[0]) + '</span><span>' + escapeHtml(dates[n - 1] === "지금" ? "지금" : dates[n - 1]) + '</span></div>';
+
+    btcCharts[o.id] = {n:n, dates:dates, fmt:o.fmt, series:series.map(function(s){ return {name:s.name, v:s.v}; })};
+    var aria = o.title + ": " + dates[0] + " " + o.fmt(all[0]) + " → " + dates[n - 1] + " " + o.fmt(all[all.length - 1]) + ", 최저 " + o.fmt(vMin) + ", 최고 " + o.fmt(vMax);
+    return '<div class="btc-chart" data-chart="' + o.id + '" role="img" aria-label="' + escapeHtml(aria) + '">' + html + '</div>';
+  }
+
+  // 오늘(지금) 값을 이력 끝에 붙인다. 실시간 현재가가 반영된 자동 값이라 마지막 점이 헤더 숫자와 일치한다.
+  function withNow(r, nowVal){
+    var d = r.d.slice(), v = r.v.slice();
+    if(nowVal != null && isFinite(nowVal)){ d.push("지금"); v.push(nowVal); }
+    return {d:d, v:v};
+  }
+
+  function btcIndChartHtml(ind){
+    var key = ind.key === "fund" ? "fund7" : ind.key;
+    var r = histRange(key, ind.key === "fund");
+    if(!r || r.d.length < 2) return chartEmptyHtml();
+    var isLiveKey = ind.key !== "fng" && ind.key !== "fund";
+    if(isLiveKey) r = withNow(r, btcAutoValue(ind.key));
+    var html = lineChart(r.d, [{name:ind.label, cls:"s-main", v:r.v}], {id:"ind-" + ind.key, title:ind.label, low:ind.low, high:ind.high,
+      fmt:function(v){ return fmtIndValue(ind, v); }, zoneOf:function(v){ return btcZone(ind, v); }});
+    if(ind.key === "fund") html += '<div class="chart-note">Bybit가 주는 최근 약 2개월 (일별 평균의 7일 이동평균)</div>';
+    return html;
+  }
+
+  function btcChartsTopHtml(){
+    var h = '<div class="chart-top-head"><div class="buy-section-title">가격과 신호 추이</div><div class="chart-range" role="group" aria-label="차트 기간">';
+    BTC_RANGES.forEach(function(r){ h += '<button type="button" class="range-btn' + (r[0] === btcRange ? ' on' : '') + '" data-action="btc-range" data-days="' + r[0] + '">' + r[1] + '</button>'; });
+    h += '</div></div>';
+
+    // 1) 가격 + 200주 평균선 (로그 눈금: 같은 비율의 등락이 같은 높이로 보인다)
+    var p = histRange("price"), m = histRange("wma");
+    h += '<div class="chart-panel"><div class="chart-head"><span class="chart-title">BTC 가격과 200주 평균선 <em>(로그 눈금)</em></span>' +
+      '<span class="chart-legend"><i class="lg s-main"></i>가격 <i class="lg s-ma"></i>200주 평균</span></div>';
+    if(p && m && p.d.length > 1){
+      var pv = p.v.slice(), mv = m.v.slice(), d = p.d.slice();
+      if(btcLive){ d.push("지금"); pv.push(btcLive.price); mv.push(mv[mv.length - 1]); }
+      h += lineChart(d, [{name:"가격", cls:"s-main", v:pv}, {name:"200주 평균", cls:"s-ma", v:mv}], {id:"top-price", title:"BTC 가격과 200주 평균선", log:true, fmt:usd});
+    } else h += chartEmptyHtml();
+    h += '</div>';
+
+    // 2) 저평가 신호가 겹친 개수의 과거 추이 (장기 이력이 있는 5개 지표)
+    var keys = ["mvrv", "wma200", "puell", "fng", "dd"], rs = {}, ready = !!(btcAuto && btcAuto.hist);
+    keys.forEach(function(k){ rs[k] = histRange(k); if(!rs[k]) ready = false; });
+    h += '<div class="chart-panel"><div class="chart-head"><span class="chart-title">저평가 신호가 겹친 개수 <em>(5개 지표 기준 과거 추이)</em></span></div>';
+    if(ready && rs.mvrv.d.length > 1){
+      var cnt = rs.mvrv.d.map(function(_, i){
+        var c = 0, any = false;
+        BTC_INDICATORS.forEach(function(ind){
+          if(keys.indexOf(ind.key) < 0) return;
+          var x = rs[ind.key].v[i];
+          if(x != null){ any = true; if(x <= ind.low) c++; }
+        });
+        return any ? c : null;
+      });
+      var dts = rs.mvrv.d.slice(), nowC = 0, nowAny = false;
+      BTC_INDICATORS.forEach(function(ind){
+        if(keys.indexOf(ind.key) < 0) return;
+        var x = btcAutoValue(ind.key);
+        if(x != null && isFinite(x)){ nowAny = true; if(x <= ind.low) nowC++; }
+      });
+      if(nowAny){ dts.push("지금"); cnt.push(nowC); }
+      h += lineChart(dts, [{name:"저평가 신호", cls:"s-main", v:cnt}], {id:"top-count", title:"저평가 신호가 겹친 개수", yMin:0, yMax:5, step:true, area:true,
+        marks:[{v:3, label:"3개↑ 분할 매수 후보"}, {v:4, label:"4개↑ 적극 고려"}], fmt:function(v){ return Math.round(v) + "개"; }});
+    } else h += chartEmptyHtml();
+    h += '<div class="chart-note">펀딩비는 과거 이력이 짧아 이 차트에서 뺐어요. 과거에 신호가 겹쳤던 때의 가격을 위 차트와 비교해 보세요. 과거 모습이 미래를 보장하지는 않아요.</div></div>';
+    return h;
+  }
+
+  function paintBtcCharts(root){
+    var top = root.querySelector(".btc-charts-top");
+    if(top) top.innerHTML = btcChartsTopHtml();
+    BTC_INDICATORS.forEach(function(ind){
+      var el = root.querySelector('.btc-ind-chart[data-key="' + ind.key + '"]');
+      if(el) el.innerHTML = btcIndChartHtml(ind);
+    });
+    btcChartPaintAt = Date.now();
+  }
+
   function clockText(ms, withSec){
     return new Date(ms).toLocaleTimeString("ko-KR", {hour:"2-digit", minute:"2-digit", second:withSec ? "2-digit" : undefined, hour12:false});
   }
@@ -2062,6 +2337,7 @@
     h += '<div class="btc-ind-body"><span class="btc-val mono">' + (e ? fmtIndValue(ind, e.v) : "—") + '</span>';
     h += '<span class="btc-src">' + (e ? btcSrcLabel(ind.key, e.src) : "") + '</span>';
     h += '<input type="number" step="any" class="btc-manual" data-action="btc-manual" data-key="' + ind.key + '" value="' + escapeHtml(m == null ? "" : String(m)) + '" placeholder="' + escapeHtml(ph) + '" aria-label="' + escapeHtml(ind.label) + ' 직접 입력"></div>';
+    h += '<div class="btc-ind-chart" data-key="' + ind.key + '">' + btcIndChartHtml(ind) + '</div>';
     h += '<div class="btc-ind-rule">저평가 ' + ind.lowTxt + ' · 과열 ' + ind.highTxt + '</div>';
     h += '<div class="btc-ind-desc">' + escapeHtml(ind.desc) + '</div>';
     h += '</div>';
@@ -2089,6 +2365,8 @@
 
     h += '<div class="card buy-card btc-card">';
     h += '<div class="btc-snap">' + btcSnapHtml() + '</div>';
+
+    h += '<div class="buy-section btc-charts-top">' + btcChartsTopHtml() + '</div>';
 
     h += '<div class="buy-section">';
     h += '<div class="buy-section-title">① 객관 지표 6개 <span class="btc-summary mono">' + btcSummaryText(d) + '</span></div>';
@@ -2139,6 +2417,9 @@
     var snap = root.querySelector(".btc-snap");
     if(light === true) paintBtcSnapLight(root);
     else if(snap) snap.innerHTML = btcSnapHtml();
+    // 차트: 새 데이터·기간 변경 때는 바로, 실시간 틱 중에는 20초에 한 번만 (마우스를 올려 보고 있을 땐 건드리지 않는다)
+    if(light === "input"){ /* 직접 입력·체크 중에는 차트를 다시 그리지 않는다 */ }
+    else if(light !== true || (Date.now() - btcChartPaintAt > 20000 && !btcChartHover)) paintBtcCharts(root);
     d.rows.forEach(function(row){
       var el = root.querySelector('.btc-ind[data-key="' + row.ind.key + '"]');
       if(!el) return;
@@ -2288,7 +2569,7 @@
         t.closest(".btc-card").querySelectorAll(".yesno-btn").forEach(function(b){ b.classList.remove("active-yes","active-no"); });
         if(state.btc.q1Answer === true) t.classList.add("active-yes");
         else if(state.btc.q1Answer === false) t.classList.add("active-no");
-        refreshBtc();
+        refreshBtc("input");
         break;
       }
     }
@@ -2371,14 +2652,14 @@
         state.btc.tooHard = t.checked;
         t.closest(".toohard-row").classList.toggle("checked", t.checked);
         save();
-        refreshBtc();
+        refreshBtc("input");
         break;
       }
       case "btc-disc": {
         state.btc.discipline[t.getAttribute("data-id")] = t.checked;
         t.closest(".disc-item").classList.toggle("checked", t.checked);
         save();
-        refreshBtc();
+        refreshBtc("input");
         break;
       }
     }
@@ -2412,7 +2693,7 @@
       case "btc-manual": {
         state.btc.manual[t.getAttribute("data-key")] = t.value;
         save();
-        refreshBtc();
+        refreshBtc("input");
         break;
       }
       case "btc-text": {
@@ -2737,6 +3018,41 @@
     paintSel();
   });
   document.addEventListener("mouseup", function(){ dragSel = null; });
+
+  /* BTC 차트: 기간 버튼, 마우스/터치로 가리킨 날짜의 값 보기 */
+  app.addEventListener("click", function(e){
+    var b = e.target.closest('[data-action="btc-range"]');
+    if(!b) return;
+    btcRange = Number(b.getAttribute("data-days")) || 365;
+    try{ localStorage.setItem("mover-btc-range", String(btcRange)); }catch(err){}
+    refreshBtc();
+  });
+  function hideChartTips(){
+    btcChartHover = false;
+    app.querySelectorAll(".btc-chart.hover").forEach(function(w){ w.classList.remove("hover"); });
+  }
+  app.addEventListener("pointermove", function(e){
+    var w = e.target.closest && e.target.closest(".btc-chart");
+    if(!w){ if(btcChartHover) hideChartTips(); return; }
+    var c = btcCharts[w.getAttribute("data-chart")], plot = w.querySelector(".chart-plot");
+    if(!c || !plot) return;
+    var r = plot.getBoundingClientRect();
+    var fx = Math.min(1, Math.max(0, (e.clientX - r.left) / (r.width || 1)));
+    var i = Math.round(fx * (c.n - 1)), pct = i / (c.n - 1) * 100;
+    var tip = plot.querySelector(".ch-tip"), cross = plot.querySelector(".ch-cross");
+    var d = c.dates[i], html = '<b>' + escapeHtml(d === "지금" ? "지금 (실시간 반영)" : d) + '</b>';
+    c.series.forEach(function(s){
+      var v = s.v[i];
+      html += '<span>' + (c.series.length > 1 ? escapeHtml(s.name) + ' ' : '') + (v == null ? "—" : escapeHtml(c.fmt(v))) + '</span>';
+    });
+    tip.innerHTML = html;
+    cross.style.left = pct + "%";
+    tip.style.left = pct + "%";
+    tip.classList.toggle("left", pct > 60);
+    w.classList.add("hover");
+    btcChartHover = true;
+  });
+  app.addEventListener("pointerleave", hideChartTips);
 
   function openHourPicker(row){
     if(!row) return;
