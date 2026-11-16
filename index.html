@@ -1224,7 +1224,7 @@
   var btcLive = null, btcLiveFetching = false, btcLiveLastAttempt = 0;
   function fetchBtcLive(force){
     if(btcLiveFetching) return;
-    if(!force && Date.now() - btcLiveLastAttempt < 30000) return;
+    if(!force && Date.now() - btcLiveLastAttempt < 10000) return;
     btcLiveFetching = true; btcLiveLastAttempt = Date.now();
     fetch("https://api.coinbase.com/v2/prices/BTC-USD/spot")
       .then(function(r){ if(!r.ok) throw new Error("현재가 서버 오류 (" + r.status + ")"); return r.json(); })
@@ -1234,6 +1234,13 @@
       })
       .catch(function(){ /* 현재가 실패는 조용히 무시: 일봉 지표 표시는 그대로 유지 */ })
       .then(function(){ btcLiveFetching = false; refreshBtc(); });
+  }
+
+  function fetchFng(){
+    return fetch("https://api.alternative.me/fng/?limit=1")
+      .then(function(r){ return r.json(); })
+      .then(function(j){ return (j && j.data && j.data[0]) ? Number(j.data[0].value) : null; })
+      .catch(function(){ return null; });
   }
 
   /* 펀딩비: 최근 7일(8시간 간격 21회) 평균을 연환산 %로. Bybit 우선, 실패하면 OKX. 둘 다 키 불필요한 공개 API. */
@@ -1263,11 +1270,9 @@
     refreshBtc();
     var pPrice = cmGet("PriceUSD", "2010-07-18");
     var pOn = cmGet("CapMVRVCur,IssTotUSD", isoDaysAgo(430));
-    var pFng = fetch("https://api.alternative.me/fng/?limit=1")
-      .then(function(r){ return r.json(); })
-      .then(function(j){ return (j && j.data && j.data[0]) ? Number(j.data[0].value) : null; })
-      .catch(function(){ return null; });
+    var pFng = fetchFng();
     var pFund = fetchFunding();
+    btcQuickAt = Date.now();
     Promise.all([pPrice, pOn, pFng, pFund]).then(function(res){
       var rows = res[0].filter(function(r){ return r.PriceUSD != null; });
       if(rows.length < 1400) throw new Error("가격 이력이 부족해요.");
@@ -1294,18 +1299,92 @@
     });
   }
 
-  /* 암호화폐 탭을 보고 있는 동안 1분마다 현재가를 갱신 */
-  setInterval(function(){
-    if(state.view === "buy" && !document.hidden) fetchBtcLive(false);
-  }, 60000);
+  /* ---- 즉시 최신화 ----
+     - 현재가: Coinbase 웹소켓으로 체결될 때마다 실시간 수신 (연결이 안 되면 10~15초마다 조회로 대신한다)
+     - 공포·탐욕 지수, 펀딩비: 5분마다
+     - 일봉 지표(MVRV·200주선·퓨얼·고점): 30분마다, 그리고 새 일봉이 나올 시간(UTC 날짜가 바뀐 뒤)에는 더 자주
+     암호화폐 탭을 보고 있고 화면이 켜져 있을 때만 동작하고, 다른 탭으로 가거나 화면이 숨겨지면 멈춘다. */
+  var BTC_FULL_MS = 30*60*1000, BTC_QUICK_MS = 5*60*1000;
+  var btcWs = null, btcWsOpen = false, btcWsRetry = 0, btcWsTimer = null, btcPaintTimer = null, btcQuickAt = 0;
+
+  function btcWatching(){
+    return state.view === "buy" && !document.hidden && (!sbConfigured() || !!session);
+  }
+  function scheduleBtcPaint(){
+    if(btcPaintTimer) return;
+    btcPaintTimer = setTimeout(function(){ btcPaintTimer = null; if(state.view === "buy") refreshBtc(true); }, 1000);
+  }
+  function startBtcWs(){
+    if(btcWs || !window.WebSocket || !btcWatching()) return;
+    var ws;
+    try{ ws = new WebSocket("wss://ws-feed.exchange.coinbase.com"); }catch(e){ return; }
+    btcWs = ws;
+    ws.onopen = function(){
+      btcWsRetry = 0; btcWsOpen = true;
+      ws.send(JSON.stringify({type:"subscribe", product_ids:["BTC-USD"], channels:["ticker"]}));
+      scheduleBtcPaint();
+    };
+    ws.onmessage = function(e){
+      var m; try{ m = JSON.parse(e.data); }catch(err){ return; }
+      if(m.type !== "ticker") return;
+      var p = Number(m.price);
+      if(!(p > 0)) return;
+      btcLive = {price:p, at:Date.now()};
+      scheduleBtcPaint();
+    };
+    ws.onclose = function(){
+      if(btcWs !== ws) return; // 우리가 직접 닫은 경우
+      btcWs = null; btcWsOpen = false;
+      scheduleBtcPaint();
+      if(btcWatching()) btcWsTimer = setTimeout(startBtcWs, Math.min(30000, 2000 * Math.pow(2, btcWsRetry++)));
+    };
+    ws.onerror = function(){ try{ ws.close(); }catch(e){} };
+  }
+  function stopBtcWs(){
+    clearTimeout(btcWsTimer);
+    btcWsOpen = false;
+    if(btcWs){ var w = btcWs; btcWs = null; try{ w.close(); }catch(e){} }
+  }
+
+  function fetchBtcQuick(){
+    if(btcQuickAt && Date.now() - btcQuickAt < 30000) return;
+    btcQuickAt = Date.now();
+    Promise.all([fetchFng(), fetchFunding()]).then(function(r){
+      if(!btcAuto || !btcAuto.values) return;
+      if(r[0] != null) btcAuto.values.fng = r[0];
+      if(r[1] != null) btcAuto.values.fund = r[1];
+      try{ localStorage.setItem(BTC_CACHE_KEY, JSON.stringify(btcAuto)); }catch(e){}
+      refreshBtc(true);
+    });
+  }
+
+  // 새 일봉이 나와야 할 시점이면(지표 기준일이 어제보다 오래됨) 30분을 기다리지 않고 10분마다 다시 확인한다.
+  function btcFullDue(){
+    if(!btcAuto) return true;
+    var age = Date.now() - btcAuto.fetchedAt;
+    if(age >= BTC_FULL_MS) return true;
+    var yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    return (btcAuto.priceAsOf || "") < yesterday && age >= 10*60*1000;
+  }
 
   function ensureBtcData(){
-    fetchBtcLive(false);
+    if(!btcWatching()){ stopBtcWs(); return; }
+    startBtcWs();
+    if(!btcWsOpen) fetchBtcLive(false);
     if(btcFetching) return;
-    if(btcAuto && (Date.now() - btcAuto.fetchedAt) < 6*3600*1000) return;
-    if(Date.now() - btcLastAttempt < 60000) return;
-    fetchBtcData();
+    if(btcFullDue()){
+      if(Date.now() - btcLastAttempt < 60000) return;
+      fetchBtcData();
+    } else if(Date.now() - btcQuickAt >= BTC_QUICK_MS){
+      fetchBtcQuick();
+    }
   }
+
+  setInterval(ensureBtcData, 15000);
+  document.addEventListener("visibilitychange", function(){
+    if(document.hidden) stopBtcWs(); else if(state.view === "buy") ensureBtcData();
+  });
+  window.addEventListener("online", function(){ if(state.view === "buy") ensureBtcData(); });
 
   /* ---- 지표 해석과 최종 판정 ---- */
   /* 일봉 마감값에 실시간 현재가를 반영한 자동 지표값.
@@ -1591,7 +1670,7 @@
 
     app.innerHTML = html;
     selAfterRender();
-    if(state.view === "buy") setTimeout(ensureBtcData, 0);
+    if(state.view === "buy") setTimeout(ensureBtcData, 0); else stopBtcWs();
   }
 
   function renderSettingsPanel(){
@@ -1926,27 +2005,47 @@
     return "저평가 " + d.counts.good + " · 중립 " + d.counts.mid + " · 과열 " + d.counts.hot + "  (지표 " + d.known + "/" + BTC_INDICATORS.length + ")";
   }
 
+  function clockText(ms, withSec){
+    return new Date(ms).toLocaleTimeString("ko-KR", {hour:"2-digit", minute:"2-digit", second:withSec ? "2-digit" : undefined, hour12:false});
+  }
+  function btcPriceText(){ return "BTC " + usd(btcLive ? btcLive.price : btcAuto.price); }
+  function btcAsofText(){
+    var a = btcAuto, t = "";
+    if(btcLive) t = btcWsOpen ? "● 실시간 " + clockText(btcLive.at, true) : "현재가 " + clockText(btcLive.at) + " 기준";
+    if(a){
+      t += (t ? " · " : "") + "지표 기준일 " + (a.priceAsOf || "") + (btcLive ? " (종가 " + usd(a.price) + ")" : "") + " · 역대 고점 " + usd(a.ath) + " · 지표 갱신 " + clockText(a.fetchedAt);
+    } else if(btcFetching){
+      t += " · 지표를 불러오는 중...";
+    }
+    return t;
+  }
+  // 최근 흐름: 일봉 종가 기준 7일·30일 전 가격과 지금(현재가 우선)을 비교
+  function btcFlowHtml(){
+    var a = btcAuto;
+    if(!(a && a.p7 > 0 && a.p30 > 0)) return "";
+    var cur = btcLive ? btcLive.price : a.price;
+    var chg = function(p){ var c = (cur / p - 1) * 100; return '<span class="' + (c < 0 ? 'chg-dn' : 'chg-up') + '">' + (c > 0 ? '+' : '') + c.toFixed(1) + '%</span>'; };
+    return '최근 흐름 7일 ' + chg(a.p7) + ' · 30일 ' + chg(a.p30);
+  }
+  // 실시간 틱마다 상단 요약 전체를 갈아끼우면 버튼 클릭이 끊길 수 있어서, 바뀌는 글자만 고친다.
+  function paintBtcSnapLight(root){
+    var p = root.querySelector(".btc-price"), l = root.querySelector(".btc-live-line"), f = root.querySelector(".btc-flow");
+    if(!p || !l){ var snap = root.querySelector(".btc-snap"); if(snap) snap.innerHTML = btcSnapHtml(); return; }
+    p.textContent = btcPriceText();
+    l.textContent = btcAsofText();
+    if(f) f.innerHTML = btcFlowHtml();
+  }
+
   function btcSnapHtml(){
     var a = btcAuto;
     var h = '<div class="btc-snap-main">';
-    if(btcLive){
-      var hhmm = new Date(btcLive.at).toLocaleTimeString("ko-KR", {hour:"2-digit", minute:"2-digit", hour12:false});
-      h += '<span class="btc-price mono">BTC ' + usd(btcLive.price) + '</span>';
-      h += '<span class="btc-asof">현재가 ' + hhmm + ' 기준' +
-        (a ? ' · 지표 기준일 ' + escapeHtml(a.priceAsOf || "") + ' (종가 ' + usd(a.price) + ') · 역대 고점 ' + usd(a.ath)
-           : (btcFetching ? ' · 지표를 불러오는 중...' : '')) + '</span>';
-    } else if(a){
-      h += '<span class="btc-price mono">BTC ' + usd(a.price) + '</span>';
-      h += '<span class="btc-asof">기준일 ' + escapeHtml(a.priceAsOf || "") + ' · 역대 고점 ' + usd(a.ath) + '</span>';
+    if(btcLive || a){
+      h += '<span class="btc-price mono">' + btcPriceText() + '</span>';
+      h += '<span class="btc-asof btc-live-line">' + escapeHtml(btcAsofText()) + '</span>';
     } else {
       h += '<span class="btc-asof">' + (btcFetching ? "지표를 불러오는 중..." : "아직 불러온 지표가 없어요") + '</span>';
     }
-    // 최근 흐름: 일봉 종가 기준 7일·30일 전 가격과 지금(현재가 우선)을 비교
-    if(a && a.p7 > 0 && a.p30 > 0){
-      var cur = btcLive ? btcLive.price : a.price;
-      var chg = function(p){ var c = (cur / p - 1) * 100; return '<span class="' + (c < 0 ? 'chg-dn' : 'chg-up') + '">' + (c > 0 ? '+' : '') + c.toFixed(1) + '%</span>'; };
-      h += '<span class="btc-asof">최근 흐름 7일 ' + chg(a.p7) + ' · 30일 ' + chg(a.p30) + '</span>';
-    }
+    h += '<span class="btc-asof btc-flow">' + btcFlowHtml() + '</span>';
     h += '</div>';
     h += '<button type="button" class="icon-btn" data-action="btc-refresh"' + (btcFetching ? ' disabled' : '') + '>' + (btcFetching ? "불러오는 중..." : "↻ 지표 새로고침") + '</button>';
     if(btcError) h += '<div class="btc-err">⚠ ' + escapeHtml(btcError) + ' 아래 칸에 직접 입력해도 돼요.</div>';
@@ -2033,16 +2132,18 @@
     return h;
   }
 
-  function refreshBtc(){
+  function refreshBtc(light){
     var root = document.querySelector(".btc-card");
     if(!root) return;
     var d = computeBtc();
     var snap = root.querySelector(".btc-snap");
-    if(snap) snap.innerHTML = btcSnapHtml();
+    if(light === true) paintBtcSnapLight(root);
+    else if(snap) snap.innerHTML = btcSnapHtml();
     d.rows.forEach(function(row){
       var el = root.querySelector('.btc-ind[data-key="' + row.ind.key + '"]');
       if(!el) return;
-      el.querySelector(".btc-zone").outerHTML = btcZoneBadge(row.zone);
+      var zEl = el.querySelector(".btc-zone"), zNew = btcZoneBadge(row.zone);
+      if(zEl.outerHTML !== zNew) zEl.outerHTML = zNew;
       el.querySelector(".btc-val").textContent = row.e ? fmtIndValue(row.ind, row.e.v) : "—";
       el.querySelector(".btc-src").textContent = row.e ? btcSrcLabel(row.ind.key, row.e.src) : "";
       var autoV = btcAutoValue(row.ind.key);
@@ -2052,8 +2153,8 @@
     if(sum) sum.textContent = btcSummaryText(d);
     var sc = root.querySelector(".btc-disc-score");
     if(sc) sc.textContent = d.disc + "/" + d.discTotal;
-    var fin = root.querySelector(".buy-final");
-    if(fin) fin.outerHTML = renderFinalRating(d.rating);
+    var fin = root.querySelector(".buy-final"), finNew = renderFinalRating(d.rating);
+    if(fin && fin.outerHTML.replace(/\s+/g, "") !== finNew.replace(/\s+/g, "")) fin.outerHTML = finNew;
   }
 
   /* ---------------- events ---------------- */
