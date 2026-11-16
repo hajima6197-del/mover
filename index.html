@@ -410,6 +410,11 @@
   .disc-item input{width:17px;height:17px;margin-top:2px;accent-color:var(--success);flex-shrink:0;}
   .disc-item.checked{color:var(--ink);}
   .buy-reason.btc-short{min-height:76px;margin-top:10px;margin-bottom:0;}
+  .btc-links{margin:14px 18px 4px;font-size:12px;color:var(--ink-muted);line-height:1.7;}
+  .btc-links a{display:inline-block;margin:4px 8px 0 0;padding:4px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--accent);text-decoration:none;font-weight:600;}
+  .btc-links a:hover{background:var(--accent-soft);}
+  .chg-dn{color:var(--danger);font-weight:600;}
+  .chg-up{color:var(--success);font-weight:600;}
   .btc-disclaimer{margin:4px 0 8px;font-size:11.5px;color:var(--ink-faint);line-height:1.6;text-align:center;}
 
   .login-wrap{min-height:70vh;display:flex;align-items:center;justify-content:center;}
@@ -1160,7 +1165,7 @@
   }
 
   /* ---------------- 비트코인 매수기준 (멍거식 가치투자 규율) ---------------- */
-  // 비트코인은 현금흐름이 없어 PER 같은 내재가치를 계산할 수 없어요. 그래서 서로 다른 5가지 객관 지표가
+  // 비트코인은 현금흐름이 없어 PER 같은 내재가치를 계산할 수 없어요. 그래서 서로 다른 6가지 객관 지표가
   // "지금 싼 편인가"를 동시에 말하는지(지표 합의)를 봅니다. 기준값은 널리 쓰이는 경험칙이며 미래를 보장하지 않아요.
   // 모든 지표는 "값이 낮을수록 싸다"로 통일했어요: 값 <= low 면 저평가, 값 >= high 면 과열.
   var BTC_INDICATORS = [
@@ -1173,7 +1178,9 @@
     {key:"fng", label:"공포·탐욕 지수", unit:"점", dec:0, low:25, high:75, lowTxt:"25 이하 (극단적 공포)", highTxt:"75 이상 (극단적 탐욕)",
      desc:"변동성·거래량·소셜 반응 등을 합친 0~100 심리 지수예요. 멍거가 말한 인간 심리의 오판이 가격에 얼마나 반영됐는지 보는 거울이에요."},
     {key:"dd", label:"역대 고점 대비", unit:"%", dec:1, low:-50, high:-10, lowTxt:"-50% 이하", highTxt:"-10% 이내",
-     desc:"역대 최고가에서 얼마나 내려왔는지예요. 멍거식 안전마진을 고점 대비 할인율로 근사한 값이에요. 직접 입력할 땐 -45처럼 마이너스로 적어주세요."}
+     desc:"역대 최고가에서 얼마나 내려왔는지예요. 멍거식 안전마진을 고점 대비 할인율로 근사한 값이에요. 직접 입력할 땐 -45처럼 마이너스로 적어주세요."},
+    {key:"fund", label:"펀딩비 (선물시장 분위기)", unit:"%", dec:1, low:0, high:33, lowTxt:"0% 이하 (숏이 롱에게 지급)", highTxt:"33% 이상 (롱 쏠림)",
+     desc:"무기한 선물에서 롱·숏이 8시간마다 주고받는 수수료의 최근 7일 평균을 1년치로 환산한 값이에요(Bybit, 안 되면 OKX). 높을수록 레버리지 롱이 몰린 과열, 0 이하면 숏이 롱에게 돈을 내는 구간이라 레버리지가 정리된 분위기예요. 가격이 아니라 파생시장 참여자의 쏠림을 보는 지표예요. 기준 0%는 숏 쏠림의 경계, 33%는 8시간 0.03%로 흔히 과열로 보는 수준이에요."}
   ];
   var ZONE_LABEL = {good:"저평가", mid:"중립", hot:"과열"};
 
@@ -1201,7 +1208,7 @@
   }
 
   /* ---- 자동 데이터 (Coin Metrics 커뮤니티 API + alternative.me, 둘 다 무료·키 불필요) ---- */
-  var BTC_CACHE_KEY = "mover-btc-auto-v1";
+  var BTC_CACHE_KEY = "mover-btc-auto-v2"; // v2: 펀딩비·7일/30일 가격 추가 (옛 캐시는 이 값들이 없어 버린다)
   var CM_URL = "https://community-api.coinmetrics.io/v4/timeseries/asset-metrics";
   var btcAuto = null, btcFetching = false, btcError = "", btcLastAttempt = 0;
   try{ btcAuto = JSON.parse(localStorage.getItem(BTC_CACHE_KEY) || "null"); }catch(e){ btcAuto = null; }
@@ -1229,6 +1236,26 @@
       .then(function(){ btcLiveFetching = false; refreshBtc(); });
   }
 
+  /* 펀딩비: 최근 7일(8시간 간격 21회) 평균을 연환산 %로. Bybit 우선, 실패하면 OKX. 둘 다 키 불필요한 공개 API. */
+  function annualizedFunding(rates){
+    rates = rates.filter(function(x){ return isFinite(x); });
+    if(rates.length < 15) return null;
+    return rates.reduce(function(a, b){ return a + b; }, 0) / rates.length * 3 * 365 * 100;
+  }
+  function fetchFunding(){
+    return fetch("https://api.bybit.com/v5/market/funding/history?category=linear&symbol=BTCUSDT&limit=21")
+      .then(function(r){ return r.json(); })
+      .then(function(j){ return annualizedFunding(j.result.list.map(function(x){ return Number(x.fundingRate); })); })
+      .catch(function(){ return null; })
+      .then(function(v){
+        if(v != null) return v;
+        return fetch("https://www.okx.com/api/v5/public/funding-rate-history?instId=BTC-USDT-SWAP&limit=21")
+          .then(function(r){ return r.json(); })
+          .then(function(j){ return annualizedFunding(j.data.map(function(x){ return Number(x.fundingRate); })); })
+          .catch(function(){ return null; });
+      });
+  }
+
   function fetchBtcData(){
     if(btcFetching) return;
     btcFetching = true; btcError = ""; btcLastAttempt = Date.now();
@@ -1240,7 +1267,8 @@
       .then(function(r){ return r.json(); })
       .then(function(j){ return (j && j.data && j.data[0]) ? Number(j.data[0].value) : null; })
       .catch(function(){ return null; });
-    Promise.all([pPrice, pOn, pFng]).then(function(res){
+    var pFund = fetchFunding();
+    Promise.all([pPrice, pOn, pFng, pFund]).then(function(res){
       var rows = res[0].filter(function(r){ return r.PriceUSD != null; });
       if(rows.length < 1400) throw new Error("가격 이력이 부족해요.");
       var prices = rows.map(function(r){ return Number(r.PriceUSD); });
@@ -1254,8 +1282,8 @@
       var i365 = iss.slice(-365);
       var puell = i365.length >= 300 ? iss[iss.length - 1] / (i365.reduce(function(a, b){ return a + b; }, 0) / i365.length) : null;
       btcAuto = {
-        values:{mvrv:mvrv, wma200:last / wma, puell:puell, fng:res[2], dd:(last / ath - 1) * 100},
-        price:last, ath:ath, priceAsOf:rows[rows.length - 1].time.slice(0, 10), fetchedAt:Date.now()
+        values:{mvrv:mvrv, wma200:last / wma, puell:puell, fng:res[2], dd:(last / ath - 1) * 100, fund:res[3]},
+        price:last, ath:ath, p7:prices[prices.length - 8], p30:prices[prices.length - 31], priceAsOf:rows[rows.length - 1].time.slice(0, 10), fetchedAt:Date.now()
       };
       try{ localStorage.setItem(BTC_CACHE_KEY, JSON.stringify(btcAuto)); }catch(e){}
     }).catch(function(e){
@@ -1913,6 +1941,12 @@
     } else {
       h += '<span class="btc-asof">' + (btcFetching ? "지표를 불러오는 중..." : "아직 불러온 지표가 없어요") + '</span>';
     }
+    // 최근 흐름: 일봉 종가 기준 7일·30일 전 가격과 지금(현재가 우선)을 비교
+    if(a && a.p7 > 0 && a.p30 > 0){
+      var cur = btcLive ? btcLive.price : a.price;
+      var chg = function(p){ var c = (cur / p - 1) * 100; return '<span class="' + (c < 0 ? 'chg-dn' : 'chg-up') + '">' + (c > 0 ? '+' : '') + c.toFixed(1) + '%</span>'; };
+      h += '<span class="btc-asof">최근 흐름 7일 ' + chg(a.p7) + ' · 30일 ' + chg(a.p30) + '</span>';
+    }
     h += '</div>';
     h += '<button type="button" class="icon-btn" data-action="btc-refresh"' + (btcFetching ? ' disabled' : '') + '>' + (btcFetching ? "불러오는 중..." : "↻ 지표 새로고침") + '</button>';
     if(btcError) h += '<div class="btc-err">⚠ ' + escapeHtml(btcError) + ' 아래 칸에 직접 입력해도 돼요.</div>';
@@ -1952,13 +1986,13 @@
 
   function renderBuyView(){
     var b = state.btc, d = computeBtc();
-    var h = '<div class="buy-intro">비트코인은 현금흐름이 없어서 PER 같은 <strong>내재가치를 계산할 수 없어요</strong>. 대신 온체인 평균 매수단가·장기 추세·채굴자 수익성·시장 심리·고점 대비 할인율, 이렇게 <strong>서로 다른 5개 지표가 동시에 싸다고 말하는지</strong> 봐요. 멍거의 \"여러 요인이 겹칠 때만 움직인다\"를 지표 합의로 옮긴 거예요. ②~④는 그의 사고법인 능력범위·역발상·규율을 질문으로 바꾼 거고요. 참고로 멍거 본인은 비트코인에 회의적이었어요. 이 화면은 그를 따르라는 게 아니라, 그의 방식으로 스스로를 검증하는 체크리스트예요.</div>';
+    var h = '<div class="buy-intro">비트코인은 현금흐름이 없어서 PER 같은 <strong>내재가치를 계산할 수 없어요</strong>. 대신 온체인 평균 매수단가·장기 추세·채굴자 수익성·시장 심리·고점 대비 할인율·선물시장 분위기, 이렇게 <strong>서로 다른 6개 지표가 동시에 싸다고 말하는지</strong> 봐요. 멍거의 \"여러 요인이 겹칠 때만 움직인다\"를 지표 합의로 옮긴 거예요. ②~④는 그의 사고법인 능력범위·역발상·규율을 질문으로 바꾼 거고요. 참고로 멍거 본인은 비트코인에 회의적이었어요. 이 화면은 그를 따르라는 게 아니라, 그의 방식으로 스스로를 검증하는 체크리스트예요.</div>';
 
     h += '<div class="card buy-card btc-card">';
     h += '<div class="btc-snap">' + btcSnapHtml() + '</div>';
 
     h += '<div class="buy-section">';
-    h += '<div class="buy-section-title">① 객관 지표 5개 <span class="btc-summary mono">' + btcSummaryText(d) + '</span></div>';
+    h += '<div class="buy-section-title">① 객관 지표 6개 <span class="btc-summary mono">' + btcSummaryText(d) + '</span></div>';
     h += '<div class="btc-grid">' + d.rows.map(btcIndRowHtml).join("") + '</div>';
     h += '</div>';
 
@@ -1990,7 +2024,12 @@
     h += renderFinalRating(d.rating);
     h += '</div>';
 
-    h += '<div class="btc-disclaimer">이 화면은 스스로의 규율을 점검하는 체크리스트이며 투자 조언이 아닙니다. 지표 기준은 널리 쓰이는 경험칙으로 미래 수익을 보장하지 않아요. 데이터 출처: Coin Metrics 커뮤니티 API, alternative.me (지연·오류가 있을 수 있어요).</div>';
+    h += '<div class="btc-links"><strong>시황 직접 확인</strong> (자동 수집이 안 되는 소스예요. X·페이스북은 API가 막혀 있고, 코인니스는 공개 API가 없어서 링크로만 걸어둬요. 점수에는 반영되지 않아요)<br>' +
+      '<a href="https://coinness.com/" target="_blank" rel="noopener noreferrer">코인니스 속보 ↗</a>' +
+      '<a href="https://x.com/search?q=bitcoin&f=live" target="_blank" rel="noopener noreferrer">X에서 bitcoin 검색 ↗</a>' +
+      '<a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank" rel="noopener noreferrer">공포·탐욕 지수 추이 ↗</a>' +
+      '<a href="https://www.coinbase.com/price/bitcoin" target="_blank" rel="noopener noreferrer">Coinbase 시세 ↗</a></div>';
+    h += '<div class="btc-disclaimer">이 화면은 스스로의 규율을 점검하는 체크리스트이며 투자 조언이 아닙니다. 지표 기준은 널리 쓰이는 경험칙으로 미래 수익을 보장하지 않아요. 데이터 출처: Coin Metrics 커뮤니티 API, alternative.me, Coinbase, Bybit·OKX (지연·오류가 있을 수 있어요).</div>';
     return h;
   }
 
