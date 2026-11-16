@@ -235,7 +235,12 @@
   .summary-input{width:100%;border:1px solid var(--border);background:var(--bg);border-radius:8px;padding:10px 12px;font-size:13.5px;resize:vertical;min-height:56px;font-family:'Noto Sans KR';}
 
   .hour-table{display:flex;flex-direction:column;position:sticky;top:16px;}
-  .hour-row{display:grid;grid-template-columns:52px 1fr;gap:8px;align-items:center;padding:3px 0;}
+  .hour-row{display:grid;grid-template-columns:52px 1fr 30px;gap:8px;align-items:center;padding:3px 0;cursor:pointer;user-select:none;-webkit-user-select:none;}
+  /* 칸을 클릭하면 선택만 되고, 활동은 더블클릭이나 ▾ 버튼으로 골라요 */
+  .hour-row .hour-select{pointer-events:none;}
+  .hour-row.editing .hour-select{pointer-events:auto;}
+  .hour-open{border:1px solid var(--border);background:var(--surface);color:var(--ink-muted);border-radius:7px;height:30px;font-size:12px;cursor:pointer;}
+  .hour-open:hover{color:var(--accent);border-color:var(--accent);}
   /* 칸 선택 · 지우기 · 시간표 복사/붙여넣기 */
   .sel-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px;}
   .sel-bar .icon-btn:disabled,.sel-bar select:disabled{opacity:.45;cursor:default;}
@@ -1717,6 +1722,7 @@
         html += '</optgroup>';
       });
       html += '  </select>';
+      html += '  <button type="button" class="hour-open" data-action="hour-open" title="활동 고르기 (칸을 더블클릭해도 돼요)">&#9662;</button>';
       html += '</div>';
     });
     html += '<div class="legend">';
@@ -2335,7 +2341,7 @@
     h += '<button type="button" class="icon-btn" data-action="hour-sel-all">전체</button>';
     h += '<button type="button" class="icon-btn" data-action="hour-sel-clear" data-role="needhour"' + (n ? '' : ' disabled') + '>해제</button>';
     if(undoSnap && undoSnap.kind === "hour") h += '<button type="button" class="icon-btn" data-action="undo">↶ 되돌리기 (' + escapeHtml(undoSnap.label) + ')</button>';
-    h += '<div class="sel-hint">왼쪽 시간(5:00 등)을 클릭하거나 드래그해서 고르세요. Shift+클릭은 범위. 한 칸을 복사해 여러 칸을 고르고 붙여넣으면 전부 같은 활동으로 채워지고, 여러 칸을 복사하면 선택한 첫 칸부터 순서대로 붙여넣어요. (Ctrl+C / Ctrl+V / Delete도 돼요)</div>';
+    h += '<div class="sel-hint">칸을 클릭하면 선택돼요(엑셀처럼). 드래그나 Shift+클릭은 범위, Ctrl+클릭은 하나씩 추가예요. 활동을 바꾸려면 칸을 더블클릭하거나 오른쪽 ▾를 누르세요. 한 칸을 복사해 여러 칸을 고르고 붙여넣으면 전부 같은 활동으로 채워지고, 여러 칸을 복사하면 선택한 첫 칸부터 순서대로 붙여넣어요. (Ctrl+C / Ctrl+V / Delete도 돼요)</div>';
     h += '</div>';
     return h;
   }
@@ -2446,6 +2452,7 @@
         paintSel();
         break;
       case "undo": undoLast(); break;
+      case "hour-open": openHourPicker(t.closest(".hour-row")); break;
       case "hour-copy": doHourCopy(); break;
       case "hour-paste": doHourPaste(); break;
       case "hour-clear": applyHours("", "지움"); break;
@@ -2459,6 +2466,7 @@
 
   app.addEventListener("change", function(e){
     var t = e.target;
+    if(t.classList && t.classList.contains("hour-select")) t.blur(); // 고른 뒤에는 포커스를 풀어 Ctrl+C/V가 바로 되게 해요
     if(t.getAttribute && t.getAttribute("data-action") === "hour-apply" && t.value){
       applyHours(t.value === "__clear" ? "" : t.value, t.value === "__clear" ? "지움" : "활동 적용");
     }
@@ -2479,14 +2487,26 @@
     var it = e.target.closest("[data-sel]");
     if(!it) return;
     var id = it.getAttribute("data-sel"), hour = selIsHour(id);
-    if(hour){ if(!e.target.closest(".hour-label")) return; }
+    if(hour){
+      if(e.target.closest(".hour-open") || e.target.closest(".hour-row.editing select")) return;
+      if(e.detail >= 2) { e.preventDefault(); return; } // 더블클릭의 두 번째 클릭은 선택을 바꾸지 않아요
+    }
     else if(!selMode) return;
     e.preventDefault();
     var ae = document.activeElement;
     if(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) ae.blur();
     var base = Object.assign({}, sel);
+    // 시간표는 엑셀처럼: 그냥 클릭하면 그 칸만 선택, Ctrl(터치 화면은 그냥 클릭)이면 하나씩 추가/해제
+    var additive = !hour || e.ctrlKey || e.metaKey || (window.matchMedia && window.matchMedia("(pointer:coarse)").matches);
+    if(hour && !additive) selList(true).forEach(function(k){ delete base[k]; });
     if(e.shiftKey && selAnchor && selIsHour(selAnchor) === hour){
+      sel = Object.assign({}, base);
       addRect(selAnchor, id);
+    } else if(hour && !additive){
+      var only = selList(true).length === 1 && sel[id];
+      sel = Object.assign({}, base);
+      if(!only) sel[id] = true;
+      selAnchor = id;
     } else {
       if(sel[id]) delete sel[id]; else sel[id] = true;
       selAnchor = id;
@@ -2507,6 +2527,23 @@
     paintSel();
   });
   document.addEventListener("mouseup", function(){ dragSel = null; });
+
+  function openHourPicker(row){
+    if(!row) return;
+    var s = row.querySelector("select");
+    if(!s) return;
+    row.classList.add("editing");
+    s.focus();
+    if(s.showPicker){ try{ s.showPicker(); }catch(err){} }
+  }
+  app.addEventListener("dblclick", function(e){
+    var row = e.target.closest(".hour-row");
+    if(row && !e.target.closest(".hour-open")) openHourPicker(row);
+  });
+  app.addEventListener("focusout", function(e){
+    var row = e.target.closest && e.target.closest(".hour-row.editing");
+    if(row) row.classList.remove("editing");
+  });
 
   document.addEventListener("keydown", function(e){
     var tg = e.target;
