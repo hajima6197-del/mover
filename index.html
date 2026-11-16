@@ -236,6 +236,23 @@
 
   .hour-table{display:flex;flex-direction:column;position:sticky;top:16px;}
   .hour-row{display:grid;grid-template-columns:52px 1fr;gap:8px;align-items:center;padding:3px 0;}
+  /* 칸 선택 · 지우기 · 시간표 복사/붙여넣기 */
+  .sel-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px;}
+  .sel-bar .icon-btn:disabled,.sel-bar select:disabled{opacity:.45;cursor:default;}
+  .sel-mode-btn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+  .sel-mode-btn.on:hover{background:var(--accent);color:var(--accent-ink);}
+  .icon-btn.danger{color:var(--danger);}
+  .sel-count{font-size:12.5px;color:var(--ink-muted);min-width:64px;}
+  .sel-hint{flex-basis:100%;font-size:11.5px;color:var(--ink-faint);line-height:1.5;}
+  .hour-bar{margin:0 0 8px;}
+  .hour-apply{max-width:100%;border:1px solid var(--border);background:var(--surface);color:var(--ink);border-radius:7px;padding:5px 8px;font-size:12.5px;}
+  .sel-on .sel-item{cursor:pointer;user-select:none;-webkit-user-select:none;}
+  .sel-on .sel-item input,.sel-on .sel-item button,.sel-on .sel-item select,.sel-on .sel-item textarea{pointer-events:none;}
+  .sel-on .row-label-cell{cursor:pointer;}
+  .sel-item.selected{outline:2px solid var(--accent);outline-offset:-2px;background:var(--accent-soft) !important;}
+  .hour-label{cursor:pointer;user-select:none;-webkit-user-select:none;}
+  .hour-row.selected{background:var(--accent-soft);border-radius:6px;outline:none;}
+  .hour-row.selected .hour-label{color:var(--accent);font-weight:700;}
   .hour-label{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--ink-muted);text-align:right;padding-right:4px;}
   .hour-select{
     border:1px solid var(--border);border-left:4px solid var(--tc-none);background:var(--bg);color:var(--ink);
@@ -1410,6 +1427,7 @@
   }
   function render(){
     var app = document.getElementById("app");
+    selBeforeRender();
     var monthLabel = state.year + "년 " + (state.month+1) + "월";
     var html = "";
     var group = groupOf(state.view);
@@ -1473,6 +1491,7 @@
     html += '<footer class="note">' + renderCloudStatus() + '</footer>';
 
     app.innerHTML = html;
+    selAfterRender();
     if(state.view === "buy") setTimeout(ensureBtcData, 0);
   }
 
@@ -1555,13 +1574,15 @@
     html += '  <span class="month-summary-count mono">' + monthGoalStats.totalAchieved + ' / ' + monthGoalStats.totalFilled + ' 완료</span>';
     html += '</div>';
 
+    html += selBarHtml();
+
     html += '<div class="weekday-row"><div></div>';
     WEEKDAYS.forEach(function(w,i){
       html += '<div class="wd' + (i===0?" sun":"") + (i===6?" sat":"") + '">' + w + '</div>';
     });
     html += '</div>';
 
-    weeks.forEach(function(week){
+    weeks.forEach(function(week, wi){
       html += '<div class="week-block">';
       html += '<div class="cal-row">';
       html += '<div class="cal-cell row-label-cell">&nbsp;</div>';
@@ -1583,11 +1604,11 @@
 
       state.categories.forEach(function(cat){
         html += '<div class="cal-row">';
-        html += '<div class="cal-cell row-label-cell" style="background:color-mix(in srgb, '+cat.color+' 16%, var(--surface));color:'+cat.color+';">'+escapeHtml(cat.name)+'</div>';
+        html += '<div class="cal-cell row-label-cell" data-selrow="'+cat.id+'|'+wi+'" style="background:color-mix(in srgb, '+cat.color+' 16%, var(--surface));color:'+cat.color+';">'+escapeHtml(cat.name)+'</div>';
         week.forEach(function(d){
           var key = keyOf(d);
           var val = getGoal(key, cat.id);
-          html += '<div class="cal-cell goal-cell" style="background:color-mix(in srgb, '+cat.color+' 7%, var(--surface));">';
+          html += '<div class="cal-cell goal-cell sel-item" data-sel="g|'+key+'|'+cat.id+'" data-selcat="'+cat.id+'" data-selwk="'+wi+'" style="background:color-mix(in srgb, '+cat.color+' 7%, var(--surface));">';
           html += '<input class="goal-input" data-action="goal-input" data-date="'+key+'" data-cat="'+cat.id+'" value="'+escapeHtml(val)+'" placeholder="&middot;&middot;&middot;">';
           html += '</div>';
         });
@@ -1619,6 +1640,8 @@
     html += '  </div>';
     html += '</div>';
 
+    html += selBarHtml();
+
     html += '<div class="day-grid">';
     html += '<div class="day-main">';
 
@@ -1631,7 +1654,7 @@
     state.categories.forEach(function(cat){
       var val = getGoal(key, cat.id);
       var achieved = getAchieved(key, cat.id);
-      html += '<div class="goal-check-row">';
+      html += '<div class="goal-check-row sel-item" data-sel="g|'+key+'|'+cat.id+'">';
       html += '  <span class="goal-cat-label" style="background:color-mix(in srgb, '+cat.color+' 20%, var(--surface));color:'+cat.color+';">'+escapeHtml(cat.name)+'</span>';
       html += '  <input class="goal-text-input" data-action="goal-input" data-date="'+key+'" data-cat="'+cat.id+'" value="'+escapeHtml(val)+'" placeholder="이 날의 목표를 입력">';
       html += '  <input type="checkbox" class="achieve-check" data-action="achieve-toggle" data-date="'+key+'" data-cat="'+cat.id+'" ' + (achieved?"checked":"") + (val? "" : " disabled") + '>';
@@ -1658,7 +1681,7 @@
       html += '</div>';
     });
     getExtraRoutines(key).forEach(function(r){
-      html += '<div class="routine-item' + (r.done?" done":"") + '">';
+      html += '<div class="routine-item sel-item' + (r.done?" done":"") + '" data-sel="e|'+key+'|'+r.id+'">';
       html += '  <input type="checkbox" data-action="extra-routine-toggle" data-date="'+key+'" data-id="'+r.id+'" ' + (r.done?"checked":"") + '>';
       html += '  <input type="text" data-action="extra-routine-text" data-date="'+key+'" data-id="'+r.id+'" value="'+escapeHtml(r.text)+'" placeholder="오늘만의 루틴">';
       html += '  <button class="del-btn" data-action="extra-routine-del" data-date="'+key+'" data-id="'+r.id+'">&times;</button>';
@@ -1677,10 +1700,11 @@
     // hourly
     html += '<div class="day-side"><div class="card hour-table">';
     html += '<h2>시간 계획표</h2>';
+    html += hourBarHtml();
     HOURS.forEach(function(h){
       var actId = getHourly(key, h);
       var color = colorForActivity(actId);
-      html += '<div class="hour-row">';
+      html += '<div class="hour-row" data-sel="h|'+key+'|'+h+'">';
       html += '  <span class="hour-label">' + h + ':00</span>';
       html += '  <select class="hour-select" style="border-left-color:'+color+';" data-action="hour-select" data-date="'+key+'" data-hour="'+h+'">';
       html += '    <option value=""' + (!actId?' selected':'') + '>&ndash;</option>';
@@ -1711,7 +1735,7 @@
     var html = '<div class="todo-group" data-group="'+group+'">';
     html += '<div class="todo-group-title">' + label + '</div>';
     items.forEach(function(it){
-      html += '<div class="todo-item' + (it.done?" done":"") + '">';
+      html += '<div class="todo-item sel-item' + (it.done?" done":"") + '" data-sel="t|'+key+'|'+group+'|'+it.id+'">';
       html += '  <input type="checkbox" data-action="todo-toggle" data-date="'+key+'" data-group="'+group+'" data-id="'+it.id+'" ' + (it.done?"checked":"") + '>';
       html += '  <input type="text" data-action="todo-text" data-date="'+key+'" data-group="'+group+'" data-id="'+it.id+'" value="'+escapeHtml(it.text)+'">';
       html += '  <button class="del-btn" data-action="todo-del" data-date="'+key+'" data-group="'+group+'" data-id="'+it.id+'">&times;</button>';
@@ -2256,6 +2280,252 @@
     state.year = d.getFullYear(); state.month = d.getMonth();
     save(); render();
   }
+
+  /* ---------------- 칸 선택 · 지우기 · 시간표 복사/붙여넣기 ---------------- */
+  // 선택 상태는 화면 전용이라 저장·동기화하지 않아요. id 형식: g|날짜|카테고리(목표), t|날짜|그룹|id(할일), e|날짜|id(오늘만 루틴), h|날짜|시(시간표)
+  var selMode = false, sel = {}, selAnchor = null, selScope = "", dragSel = null, hourClip = null, undoSnap = null;
+
+  function selIsHour(id){ return id.charAt(0) === "h"; }
+  function selList(hour){ return Object.keys(sel).filter(function(id){ return selIsHour(id) === hour; }); }
+  function hourSelList(){ return HOURS.filter(function(h){ return sel["h|" + state.selectedDate + "|" + h]; }); }
+
+  function selBeforeRender(){
+    var scope = state.view + "|" + (state.view === "day" ? state.selectedDate : state.year + "-" + state.month);
+    if(scope !== selScope){ selScope = scope; sel = {}; selAnchor = null; selMode = false; }
+  }
+  function selAfterRender(){
+    app.classList.toggle("sel-on", selMode && (state.view === "month" || state.view === "day"));
+    paintSel();
+  }
+
+  function selBarHtml(){
+    var n = selList(false).length;
+    var h = '<div class="sel-bar" data-bar="main">';
+    h += '<button type="button" class="icon-btn sel-mode-btn' + (selMode ? ' on' : '') + '" data-action="sel-mode">' + (selMode ? '✔ 선택 모드 끄기' : '☑ 칸 선택 · 지우기') + '</button>';
+    if(selMode){
+      h += '<span class="sel-count mono" data-role="count">' + n + '칸 선택</span>';
+      h += '<button type="button" class="icon-btn danger" data-action="sel-delete" data-role="needmain"' + (n ? '' : ' disabled') + '>선택한 칸 지우기</button>';
+      h += '<button type="button" class="icon-btn" data-action="sel-all">전체 선택</button>';
+      h += '<button type="button" class="icon-btn" data-action="sel-clear" data-role="needmain"' + (n ? '' : ' disabled') + '>선택 해제</button>';
+    }
+    if(undoSnap && undoSnap.kind === "main") h += '<button type="button" class="icon-btn" data-action="undo">↶ 되돌리기 (' + escapeHtml(undoSnap.label) + ')</button>';
+    if(selMode){
+      h += '<div class="sel-hint">' + (state.view === "day" ? '목표·할일·오늘만 루틴 줄을' : '칸을') + ' 클릭하거나 드래그해서 여러 개 고르세요. Shift+클릭은 범위 선택' +
+        (state.view === "month" ? ', 카테고리 이름을 누르면 그 주의 한 줄이 통째로 선택돼요' : '') + '. 지우기는 되돌릴 수 있어요.</div>';
+    }
+    h += '</div>';
+    return h;
+  }
+
+  function hourBarHtml(){
+    var n = selList(true).length;
+    var h = '<div class="sel-bar hour-bar" data-bar="hour">';
+    h += '<span class="sel-count mono" data-role="hcount">' + n + '칸 선택</span>';
+    h += '<select class="hour-apply" data-action="hour-apply" data-role="needhour"' + (n ? '' : ' disabled') + '><option value="">선택한 칸에 활동 한 번에 적용…</option>';
+    state.timeCategories.forEach(function(tc){
+      if(!tc.activities.length) return;
+      h += '<optgroup label="' + escapeHtml(tc.name) + '">';
+      tc.activities.forEach(function(act){ h += '<option value="' + act.id + '">' + escapeHtml(act.name) + '</option>'; });
+      h += '</optgroup>';
+    });
+    h += '<option value="__clear">(비우기)</option></select>';
+    h += '<button type="button" class="icon-btn" data-action="hour-copy" data-role="needhour"' + (n ? '' : ' disabled') + '>복사</button>';
+    h += '<button type="button" class="icon-btn" data-action="hour-paste" data-role="needclip"' + (n && hourClip ? '' : ' disabled') + '>붙여넣기' + (hourClip ? ' (' + hourClip.length + '칸)' : '') + '</button>';
+    h += '<button type="button" class="icon-btn danger" data-action="hour-clear" data-role="needhour"' + (n ? '' : ' disabled') + '>지우기</button>';
+    h += '<button type="button" class="icon-btn" data-action="hour-sel-all">전체</button>';
+    h += '<button type="button" class="icon-btn" data-action="hour-sel-clear" data-role="needhour"' + (n ? '' : ' disabled') + '>해제</button>';
+    if(undoSnap && undoSnap.kind === "hour") h += '<button type="button" class="icon-btn" data-action="undo">↶ 되돌리기 (' + escapeHtml(undoSnap.label) + ')</button>';
+    h += '<div class="sel-hint">왼쪽 시간(5:00 등)을 클릭하거나 드래그해서 고르세요. Shift+클릭은 범위. 한 칸을 복사해 여러 칸을 고르고 붙여넣으면 전부 같은 활동으로 채워지고, 여러 칸을 복사하면 선택한 첫 칸부터 순서대로 붙여넣어요. (Ctrl+C / Ctrl+V / Delete도 돼요)</div>';
+    h += '</div>';
+    return h;
+  }
+
+  // 클릭·드래그 중에는 다시 그리지 않고 표시만 갱신해요 (입력 포커스·드래그 유지).
+  function paintSel(){
+    app.querySelectorAll("[data-sel]").forEach(function(el){ el.classList.toggle("selected", !!sel[el.getAttribute("data-sel")]); });
+    var nMain = selList(false).length, nHour = selList(true).length;
+    app.querySelectorAll('[data-role="count"]').forEach(function(el){ el.textContent = nMain + "칸 선택"; });
+    app.querySelectorAll('[data-role="hcount"]').forEach(function(el){ el.textContent = nHour + "칸 선택"; });
+    app.querySelectorAll('[data-role="needmain"]').forEach(function(el){ el.disabled = !nMain; });
+    app.querySelectorAll('[data-role="needhour"]').forEach(function(el){ el.disabled = !nHour; });
+    app.querySelectorAll('[data-role="needclip"]').forEach(function(el){ el.disabled = !nHour || !hourClip; });
+  }
+
+  function addRect(aId, bId){
+    var a = app.querySelector('[data-sel="' + aId + '"]'), b = app.querySelector('[data-sel="' + bId + '"]');
+    if(!a || !b) return;
+    var ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+    var l = Math.min(ra.left, rb.left), r = Math.max(ra.right, rb.right), t = Math.min(ra.top, rb.top), bt = Math.max(ra.bottom, rb.bottom);
+    var hour = selIsHour(aId);
+    app.querySelectorAll("[data-sel]").forEach(function(el){
+      var id = el.getAttribute("data-sel");
+      if(selIsHour(id) !== hour) return;
+      var rc = el.getBoundingClientRect(), cx = (rc.left + rc.right) / 2, cy = (rc.top + rc.bottom) / 2;
+      if(cx >= l && cx <= r && cy >= t && cy <= bt) sel[id] = true;
+    });
+  }
+
+  function snapDays(dates, label, kind){
+    var days = {};
+    dates.forEach(function(d){ days[d] = state.days[d] ? JSON.stringify(state.days[d]) : null; });
+    undoSnap = {days:days, label:label, kind:kind};
+  }
+  function undoLast(){
+    if(!undoSnap) return;
+    Object.keys(undoSnap.days).forEach(function(d){
+      if(undoSnap.days[d] === null) delete state.days[d]; else state.days[d] = JSON.parse(undoSnap.days[d]);
+    });
+    undoSnap = null; save(); render();
+  }
+
+  function doSelDelete(){
+    var ids = selList(false);
+    if(!ids.length) return;
+    var dates = {};
+    ids.forEach(function(id){ dates[id.split("|")[1]] = 1; });
+    snapDays(Object.keys(dates), ids.length + "칸 지움", "main");
+    ids.forEach(function(id){
+      var p = id.split("|"), day = state.days[p[1]];
+      delete sel[id];
+      if(!day) return;
+      if(p[0] === "g"){
+        if(day.goals) day.goals[p[2]] = "";
+        if(day.achieved) day.achieved[p[2]] = false;
+      } else if(p[0] === "t"){
+        if(day.todos && day.todos[p[2]]) day.todos[p[2]] = day.todos[p[2]].filter(function(x){ return x.id !== p[3]; });
+      } else if(p[0] === "e"){
+        if(day.extraRoutines) day.extraRoutines = day.extraRoutines.filter(function(x){ return x.id !== p[2]; });
+      }
+    });
+    selAnchor = null; save(); render();
+  }
+
+  function applyHours(val, label){
+    var hs = hourSelList(), d = state.selectedDate;
+    if(!hs.length) return;
+    snapDays([d], hs.length + "칸 " + label, "hour");
+    hs.forEach(function(h){ setHourly(d, h, val); });
+    render();
+  }
+  function doHourCopy(){
+    var hs = hourSelList(), d = state.selectedDate;
+    if(!hs.length) return;
+    hourClip = hs.map(function(h){ return getHourly(d, h); });
+    render();
+  }
+  function doHourPaste(){
+    var hs = hourSelList(), d = state.selectedDate;
+    if(!hs.length || !hourClip || !hourClip.length) return;
+    snapDays([d], "붙여넣기", "hour");
+    if(hourClip.length === 1){
+      hs.forEach(function(h){ setHourly(d, h, hourClip[0]); });
+    } else {
+      var start = HOURS.indexOf(hs[0]);
+      for(var i = 0; i < hourClip.length && start + i < HOURS.length; i++){
+        var hh = HOURS[start + i];
+        setHourly(d, hh, hourClip[i]);
+        sel["h|" + d + "|" + hh] = true;
+      }
+    }
+    render();
+  }
+
+  app.addEventListener("click", function(e){
+    var t = e.target.closest("[data-action]");
+    if(!t) return;
+    switch(t.getAttribute("data-action")){
+      case "sel-mode":
+        selMode = !selMode;
+        if(!selMode){ selList(false).forEach(function(id){ delete sel[id]; }); selAnchor = null; }
+        render();
+        break;
+      case "sel-delete": doSelDelete(); break;
+      case "sel-clear": selList(false).forEach(function(id){ delete sel[id]; }); selAnchor = null; paintSel(); break;
+      case "sel-all":
+        app.querySelectorAll("[data-sel]").forEach(function(el){ var id = el.getAttribute("data-sel"); if(!selIsHour(id)) sel[id] = true; });
+        paintSel();
+        break;
+      case "undo": undoLast(); break;
+      case "hour-copy": doHourCopy(); break;
+      case "hour-paste": doHourPaste(); break;
+      case "hour-clear": applyHours("", "지움"); break;
+      case "hour-sel-all":
+        app.querySelectorAll("[data-sel]").forEach(function(el){ var id = el.getAttribute("data-sel"); if(selIsHour(id)) sel[id] = true; });
+        paintSel();
+        break;
+      case "hour-sel-clear": selList(true).forEach(function(id){ delete sel[id]; }); paintSel(); break;
+    }
+  });
+
+  app.addEventListener("change", function(e){
+    var t = e.target;
+    if(t.getAttribute && t.getAttribute("data-action") === "hour-apply" && t.value){
+      applyHours(t.value === "__clear" ? "" : t.value, t.value === "__clear" ? "지움" : "활동 적용");
+    }
+  });
+
+  app.addEventListener("mousedown", function(e){
+    if(e.button !== 0) return;
+    var lab = e.target.closest("[data-selrow]");
+    if(lab && selMode){
+      e.preventDefault();
+      var pr = lab.getAttribute("data-selrow").split("|");
+      var cells = [].slice.call(app.querySelectorAll('[data-selcat="' + pr[0] + '"][data-selwk="' + pr[1] + '"]'));
+      var all = cells.every(function(c){ return sel[c.getAttribute("data-sel")]; });
+      cells.forEach(function(c){ var id = c.getAttribute("data-sel"); if(all) delete sel[id]; else sel[id] = true; });
+      paintSel();
+      return;
+    }
+    var it = e.target.closest("[data-sel]");
+    if(!it) return;
+    var id = it.getAttribute("data-sel"), hour = selIsHour(id);
+    if(hour){ if(!e.target.closest(".hour-label")) return; }
+    else if(!selMode) return;
+    e.preventDefault();
+    var ae = document.activeElement;
+    if(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) ae.blur();
+    var base = Object.assign({}, sel);
+    if(e.shiftKey && selAnchor && selIsHour(selAnchor) === hour){
+      addRect(selAnchor, id);
+    } else {
+      if(sel[id]) delete sel[id]; else sel[id] = true;
+      selAnchor = id;
+    }
+    dragSel = {start:id, base:base, hour:hour, moved:false};
+    paintSel();
+  });
+  app.addEventListener("mouseover", function(e){
+    if(!dragSel) return;
+    var it = e.target.closest("[data-sel]");
+    if(!it) return;
+    var id = it.getAttribute("data-sel");
+    if(selIsHour(id) !== dragSel.hour) return;
+    if(id === dragSel.start && !dragSel.moved) return;
+    dragSel.moved = true;
+    sel = Object.assign({}, dragSel.base);
+    addRect(dragSel.start, id);
+    paintSel();
+  });
+  document.addEventListener("mouseup", function(){ dragSel = null; });
+
+  document.addEventListener("keydown", function(e){
+    var tg = e.target;
+    if(tg && /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName)) return;
+    if(state.view !== "day" && state.view !== "month") return;
+    var mod = e.ctrlKey || e.metaKey, key = e.key, hs = hourSelList();
+    if(key === "Escape"){ sel = {}; selAnchor = null; paintSel(); }
+    else if(mod && (key === "c" || key === "C") && hs.length){ e.preventDefault(); doHourCopy(); }
+    else if(mod && (key === "v" || key === "V") && hs.length && hourClip){ e.preventDefault(); doHourPaste(); }
+    else if(mod && (key === "a" || key === "A") && selMode){
+      e.preventDefault();
+      app.querySelectorAll("[data-sel]").forEach(function(el){ var id = el.getAttribute("data-sel"); if(!selIsHour(id)) sel[id] = true; });
+      paintSel();
+    }
+    else if(key === "Delete" || key === "Backspace"){
+      if(selMode && selList(false).length){ e.preventDefault(); doSelDelete(); }
+      else if(hs.length){ e.preventDefault(); applyHours("", "지움"); }
+    }
+  });
 
   boot();
 })();
