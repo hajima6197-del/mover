@@ -1267,10 +1267,20 @@
   try{ btcAuto = JSON.parse(localStorage.getItem(BTC_CACHE_KEY) || "null"); }catch(e){ btcAuto = null; }
 
   function isoDaysAgo(n){ return new Date(Date.now() - n*86400000).toISOString().slice(0,10); }
-  function cmGet(metrics, startDate){
+  /* Coin Metrics 무료 서버는 가끔 5xx(526 등)를 돌려주는데, 이 오류 응답에는 CORS 헤더가 없어서
+     브라우저에는 "네트워크 오류(TypeError)"로 보인다. 그래서 인터넷 문제로 단정하지 않고 몇 번 재시도한다. */
+  function cmGet(metrics, startDate, attempt){
+    attempt = attempt || 0;
     return fetch(CM_URL + "?assets=btc&metrics=" + metrics + "&frequency=1d&start_time=" + startDate + "&page_size=10000")
-      .then(function(r){ if(!r.ok) throw new Error("시세 데이터 서버 오류 (" + r.status + ")"); return r.json(); })
-      .then(function(j){ return j.data || []; });
+      .then(function(r){ if(!r.ok){ var er = new Error("시세 데이터 서버 오류 (" + r.status + ")"); er.retry = r.status >= 500 || r.status === 429; throw er; } return r.json(); })
+      .then(function(j){ return j.data || []; })
+      .catch(function(e){
+        var retryable = (e instanceof TypeError) || e.retry;
+        if(retryable && attempt < 3){
+          return new Promise(function(res){ setTimeout(res, 1000 * (attempt + 1)); }).then(function(){ return cmGet(metrics, startDate, attempt + 1); });
+        }
+        throw e;
+      });
   }
 
   /* 실시간 현재가 (Coinbase 공개 API, 키 불필요). 지표는 일봉 마감 기준이라 하루 늦으므로 현재가만 따로 가져온다. */
@@ -1411,7 +1421,13 @@
       };
       try{ localStorage.setItem(BTC_CACHE_KEY, JSON.stringify(btcAuto)); }catch(e){}
     }).catch(function(e){
-      btcError = (e instanceof TypeError) ? "인터넷 연결을 확인해주세요." : (e.message || "지표를 불러오지 못했어요.");
+      if(e instanceof TypeError){
+        btcError = (navigator.onLine === false)
+          ? "인터넷 연결을 확인해주세요."
+          : "지표 데이터 서버(Coin Metrics)가 일시적으로 응답하지 않아요. 잠시 후 '↻ 지표 새로고침'을 눌러보세요." + (btcAuto ? " 지금은 이전에 받아둔 지표를 보여줘요." : "");
+      } else {
+        btcError = (e.message || "지표를 불러오지 못했어요.") + (btcAuto ? " 지금은 이전에 받아둔 지표를 보여줘요." : "");
+      }
     }).then(function(){
       btcFetching = false;
       refreshBtc();
