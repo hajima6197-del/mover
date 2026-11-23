@@ -2914,7 +2914,7 @@
     h += '<button type="button" class="icon-btn" data-action="hour-sel-all">전체</button>';
     h += '<button type="button" class="icon-btn" data-action="hour-sel-clear" data-role="needhour"' + (n ? '' : ' disabled') + '>해제</button>';
     if(undoSnap && undoSnap.kind === "hour") h += '<button type="button" class="icon-btn" data-action="undo">↶ 되돌리기 (' + escapeHtml(undoSnap.label) + ')</button>';
-    h += '<div class="sel-hint">칸을 클릭하면 선택돼요(엑셀처럼). 드래그나 Shift+클릭은 범위, Ctrl+클릭은 하나씩 추가예요. 활동을 바꾸려면 칸을 더블클릭하거나 오른쪽 ▾를 누르세요. 한 칸을 복사해 여러 칸을 고르고 붙여넣으면 전부 같은 활동으로 채워지고, 여러 칸을 복사하면 선택한 첫 칸부터 순서대로 붙여넣어요. (Ctrl+C / Ctrl+V / Delete도 돼요)</div>';
+    h += '<div class="sel-hint">칸을 클릭하면 선택돼요(엑셀처럼). 드래그나 Shift+클릭은 범위, Ctrl+클릭은 하나씩 추가예요. 활동을 바꾸려면 칸을 더블클릭하거나 오른쪽 ▾를 누르세요. 한 칸을 복사해 여러 칸을 고르고 붙여넣으면 전부 같은 활동으로 채워지고, 여러 칸을 복사하면 선택한 첫 칸부터 순서대로 붙여넣어요. (Ctrl+C / Ctrl+V / Delete도 돼요, 한글 입력 상태에서도 돼요. Ctrl+Z는 되돌리기, Ctrl+Y는 다시 적용이에요)</div>';
     h += '</div>';
     return h;
   }
@@ -2944,18 +2944,66 @@
     });
   }
 
-  function snapDays(dates, label, kind){
+  // 되돌리기 기록: 최대 50단계. 수정 직전의 "날짜별 데이터"를 저장해 두고 Ctrl+Z(또는 되돌리기 버튼)로 한 단계씩 되돌린다.
+  // Ctrl+Y / Ctrl+Shift+Z는 되돌린 것을 다시 적용한다. 글자 입력칸 안에서는 브라우저 기본 Ctrl+Z가 글자 단위로 동작한다.
+  var undoStack = [], redoStack = [];
+  function daysSnapshot(dates){
     var days = {};
     dates.forEach(function(d){ days[d] = state.days[d] ? JSON.stringify(state.days[d]) : null; });
-    undoSnap = {days:days, label:label, kind:kind};
+    return days;
+  }
+  function snapDays(dates, label, kind){
+    undoStack.push({days:daysSnapshot(dates), label:label, kind:kind});
+    if(undoStack.length > 50) undoStack.shift();
+    redoStack = [];
+    undoSnap = undoStack[undoStack.length - 1];
+  }
+  function restoreSnap(snap){
+    Object.keys(snap.days).forEach(function(d){
+      if(snap.days[d] === null) delete state.days[d]; else state.days[d] = JSON.parse(snap.days[d]);
+    });
+    // 일간 화면에서 다른 날짜의 수정을 되돌리면, 그 날짜로 가서 바뀐 걸 바로 볼 수 있게 한다.
+    var ds = Object.keys(snap.days);
+    if(state.view === "day" && ds.length && ds.indexOf(state.selectedDate) < 0){
+      state.selectedDate = ds[0];
+      var p = ds[0].split("-").map(Number); state.year = p[0]; state.month = p[1] - 1;
+    }
+    save(); render();
   }
   function undoLast(){
-    if(!undoSnap) return;
-    Object.keys(undoSnap.days).forEach(function(d){
-      if(undoSnap.days[d] === null) delete state.days[d]; else state.days[d] = JSON.parse(undoSnap.days[d]);
-    });
-    undoSnap = null; save(); render();
+    var snap = undoStack.pop();
+    undoSnap = undoStack.length ? undoStack[undoStack.length - 1] : null;
+    if(!snap){ showToast("되돌릴 수정이 없어요"); return; }
+    redoStack.push({days:daysSnapshot(Object.keys(snap.days)), label:snap.label, kind:snap.kind});
+    restoreSnap(snap);
+    showToast("되돌렸어요: " + snap.label);
   }
+  function redoLast(){
+    var snap = redoStack.pop();
+    if(!snap){ showToast("다시 적용할 수정이 없어요"); return; }
+    undoStack.push({days:daysSnapshot(Object.keys(snap.days)), label:snap.label, kind:snap.kind});
+    undoSnap = undoStack[undoStack.length - 1];
+    restoreSnap(snap);
+    showToast("다시 적용했어요: " + snap.label);
+  }
+
+  // 일간 화면의 개별 수정(활동 고르기, 달성 체크, 할일·루틴 추가/삭제/체크)도 한 단계로 기록한다.
+  // 처리기보다 먼저(캡처 단계) 실행되므로, 아직 바뀌기 전의 데이터를 저장한다.
+  var UNDO_CLICK = {"todo-add":"할일 추가", "todo-del":"할일 삭제", "extra-routine-add":"루틴 추가", "extra-routine-del":"루틴 삭제"};
+  var UNDO_CHANGE = {"hour-select":"활동 변경", "achieve-toggle":"달성 체크", "routine-toggle":"루틴 체크", "extra-routine-toggle":"루틴 체크", "todo-toggle":"할일 체크"};
+  function recordUndoFor(e, table){
+    if(state.view !== "day") return;
+    var t = e.target.closest && e.target.closest("[data-action]");
+    var label = t && table[t.getAttribute("data-action")];
+    if(label) snapDays([state.selectedDate], label, "edit");
+  }
+  app.addEventListener("click", function(e){ recordUndoFor(e, UNDO_CLICK); }, true);
+  app.addEventListener("change", function(e){ recordUndoFor(e, UNDO_CHANGE); }, true);
+  app.addEventListener("keydown", function(e){
+    if(e.key !== "Enter" || state.view !== "day") return;
+    var a = e.target.getAttribute && e.target.getAttribute("data-action");
+    if((a === "todo-new" || a === "extra-routine-new") && e.target.value.trim()) snapDays([state.selectedDate], a === "todo-new" ? "할일 추가" : "루틴 추가", "edit");
+  }, true);
 
   function doSelDelete(){
     var ids = selList(false);
@@ -3155,13 +3203,20 @@
 
   document.addEventListener("keydown", function(e){
     var tg = e.target;
-    if(tg && /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName)) return;
+    var mod = e.ctrlKey || e.metaKey;
+    // 시간표 칸의 활동 고르기(select)에 포커스가 남아 있어도 Ctrl 단축키는 먹게 한다 (select 안에서 복사/붙여넣기는 원래 할 일이 없다).
+    var inHourSelect = !!(tg && tg.classList && tg.classList.contains("hour-select"));
+    if(tg && /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName) && !(inHourSelect && mod)) return;
     if(state.view !== "day" && state.view !== "month") return;
-    var mod = e.ctrlKey || e.metaKey, key = e.key, hs = hourSelList();
+    // 한글 입력 상태에서는 e.key가 c/v 대신 ㅊ/ㅍ로 오므로, 자판 위치(e.code)로도 판별한다.
+    function is(letter){ return e.code === "Key" + letter.toUpperCase() || (e.key || "").toLowerCase() === letter; }
+    var key = e.key, hs = hourSelList();
     if(key === "Escape"){ sel = {}; selAnchor = null; paintSel(); }
-    else if(mod && (key === "c" || key === "C") && hs.length){ e.preventDefault(); doHourCopy(); }
-    else if(mod && (key === "v" || key === "V") && hs.length && hourClip){ e.preventDefault(); doHourPaste(); }
-    else if(mod && (key === "a" || key === "A") && selMode){
+    else if(mod && is("c") && hs.length){ e.preventDefault(); if(inHourSelect) tg.blur(); doHourCopy(); }
+    else if(mod && is("v") && hs.length && hourClip){ e.preventDefault(); if(inHourSelect) tg.blur(); doHourPaste(); }
+    else if(mod && is("z") && !e.shiftKey){ e.preventDefault(); if(inHourSelect) tg.blur(); undoLast(); }
+    else if(mod && (is("y") || (is("z") && e.shiftKey))){ e.preventDefault(); if(inHourSelect) tg.blur(); redoLast(); }
+    else if(mod && is("a") && selMode){
       e.preventDefault();
       app.querySelectorAll("[data-sel]").forEach(function(el){ var id = el.getAttribute("data-sel"); if(!selIsHour(id)) sel[id] = true; });
       paintSel();
