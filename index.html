@@ -560,7 +560,8 @@
       {id:"act-work", name:"업무"},
       {id:"act-commute-out", name:"퇴근"},
       {id:"act-overtime", name:"야근"},
-      {id:"act-trip", name:"출장"}
+      {id:"act-trip", name:"출장"},
+      {id:"act-parttime", name:"알바"}
     ]},
     {id:"tc-health", name:"건강", color:"var(--tc-4)", activities:[
       {id:"act-exercise", name:"운동"},
@@ -602,7 +603,7 @@
       buyChecklists: [],
       btc: newBtc(),
       redev: normalizeRedev(null),
-      migrations: {tcInvest1:true, split30:true, tcCrypto1:true},
+      migrations: {tcInvest1:true, split30:true, tcCrypto1:true, tcPartTime1:true},
       days: {}
     };
   }
@@ -617,6 +618,18 @@
     if(!invest) return;
     invest.activities = invest.activities || [];
     if(!invest.activities.some(function(a){ return a.name === "암호화폐"; })) invest.activities.push({id:"act-crypto", name:"암호화폐"});
+  }
+
+  // 한 번만 실행: 저장된 시간표 분류의 "업무"에 "알바" 활동을 추가한다 (이미 있으면 그대로, 이후에 지워도 되살리지 않는다).
+  function migratePartTimeActivity(parsed){
+    var m = parsed.migrations;
+    if(m.tcPartTime1) return;
+    m.tcPartTime1 = true;
+    migratedNow = true;
+    var work = parsed.timeCategories.find(function(c){ return c.id === "tc-work"; });
+    if(!work) return;
+    work.activities = work.activities || [];
+    if(!work.activities.some(function(a){ return a.name === "알바"; })) work.activities.push({id:"act-parttime", name:"알바"});
   }
 
   // 한 번만 실행: 시간표가 30분 단위가 되면서, 예전에 1시간 단위로 기록한 칸은 :00과 :30 두 칸에 같은 활동으로 채운다.
@@ -687,6 +700,7 @@
     parsed.days = parsed.days || {};
     migrateHalfHours(parsed);
     migrateCryptoActivity(parsed);
+    migratePartTimeActivity(parsed);
     if(!parsed.selectedDate) parsed.selectedDate = def.selectedDate;
     if(typeof parsed.year !== "number") parsed.year = def.year;
     if(typeof parsed.month !== "number") parsed.month = def.month;
