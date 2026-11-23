@@ -32,6 +32,7 @@
     --tc-4:#5B7290;
     --tc-5:#7A6AA6;
     --tc-6:#83879A;
+    --tc-7:#3E8E8A;
     --tc-none:#B9B7AE;
   }
   @media (prefers-color-scheme: dark){
@@ -563,6 +564,11 @@
       {id:"act-trip", name:"출장"},
       {id:"act-parttime", name:"알바"}
     ]},
+    {id:"tc-skill", name:"개인역량", color:"var(--tc-7)", activities:[
+      {id:"act-grad", name:"대학원"},
+      {id:"act-cert", name:"자격증"},
+      {id:"act-lang", name:"어학"}
+    ]},
     {id:"tc-health", name:"건강", color:"var(--tc-4)", activities:[
       {id:"act-exercise", name:"운동"},
       {id:"act-meal", name:"식사"},
@@ -603,7 +609,7 @@
       buyChecklists: [],
       btc: newBtc(),
       redev: normalizeRedev(null),
-      migrations: {tcInvest1:true, split30:true, tcCrypto1:true, tcPartTime1:true},
+      migrations: {tcInvest1:true, split30:true, tcCrypto1:true, tcPartTime1:true, tcSkill1:true},
       days: {}
     };
   }
@@ -630,6 +636,21 @@
     if(!work) return;
     work.activities = work.activities || [];
     if(!work.activities.some(function(a){ return a.name === "알바"; })) work.activities.push({id:"act-parttime", name:"알바"});
+  }
+
+  // 한 번만 실행: 저장된 시간표 분류에 "개인역량"(대학원·자격증·어학)을 "업무" 다음 자리에 추가한다.
+  // 이미 같은 이름의 분류가 있으면 건드리지 않고, 이후에 지우거나 옮겨도 되살리지 않는다.
+  function migrateSkillCategory(parsed){
+    var m = parsed.migrations;
+    if(m.tcSkill1) return;
+    m.tcSkill1 = true;
+    migratedNow = true;
+    var list = parsed.timeCategories;
+    if(list.some(function(c){ return c.id === "tc-skill" || c.name === "개인역량"; })) return;
+    var def = DEFAULT_TIME_CATEGORIES.find(function(c){ return c.id === "tc-skill"; });
+    var add = JSON.parse(JSON.stringify(def));
+    var at = list.findIndex(function(c){ return c.id === "tc-work"; });
+    list.splice(at >= 0 ? at + 1 : list.length, 0, add);
   }
 
   // 한 번만 실행: 시간표가 30분 단위가 되면서, 예전에 1시간 단위로 기록한 칸은 :00과 :30 두 칸에 같은 활동으로 채운다.
@@ -701,6 +722,7 @@
     migrateHalfHours(parsed);
     migrateCryptoActivity(parsed);
     migratePartTimeActivity(parsed);
+    migrateSkillCategory(parsed);
     if(!parsed.selectedDate) parsed.selectedDate = def.selectedDate;
     if(typeof parsed.year !== "number") parsed.year = def.year;
     if(typeof parsed.month !== "number") parsed.month = def.month;
@@ -2564,7 +2586,7 @@
       }
 
       case "tc-add": {
-        var tcPalette = ["var(--tc-1)","var(--tc-2)","var(--tc-3)","var(--tc-4)","var(--tc-5)","var(--tc-6)"];
+        var tcPalette = ["var(--tc-1)","var(--tc-2)","var(--tc-3)","var(--tc-4)","var(--tc-5)","var(--tc-6)","var(--tc-7)"];
         state.timeCategories.push({id:uid("tc"), name:"새 카테고리", color: tcPalette[state.timeCategories.length % tcPalette.length], activities:[]});
         save(); render();
         break;
